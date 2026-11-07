@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 REQUIRED_PATHS = [
     ".github/copilot-instructions.md",
     "SECURITY.md",
