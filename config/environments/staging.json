@@ -1,0 +1,7 @@
+{
+  "environment": "staging",
+  "debug": false,
+  "payment_mode": "staging",
+  "delivery_mode": "staging",
+  "database_path": "data/staging-ultron.db"
+}

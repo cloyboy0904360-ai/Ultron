@@ -1,0 +1,7 @@
+{
+  "environment": "development",
+  "debug": true,
+  "payment_mode": "sandbox",
+  "delivery_mode": "simulated",
+  "database_path": "data/dev-ultron.db"
+}
