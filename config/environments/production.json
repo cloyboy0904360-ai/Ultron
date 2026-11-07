@@ -1,0 +1,7 @@
+{
+  "environment": "production",
+  "debug": false,
+  "payment_mode": "live",
+  "delivery_mode": "live",
+  "database_path": "data/prod-ultron.db"
+}
