@@ -7,6 +7,10 @@ REQUIRED_PATHS = [
     "docs/ARCHITECTURE.md",
     "docs/MASTER_AUDIT.md",
     "docs/EXECUTION_STATUS.md",
+    "docs/MASTER_CONTROL_DASHBOARD.md",
+    "docs/ASSET_AUDIT.md",
+    "docs/TASK_REGISTER.md",
+    "docs/AGENT_NETWORK.md",
 ]
 
 

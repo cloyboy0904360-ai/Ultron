@@ -27,3 +27,10 @@ python scripts/validate_repository.py
 - `docs/` architecture, audit, execution status, and deployment procedures
 - `.github/workflows/` CI, security scanning, and deployment controls
 - `config/environments/` environment-specific non-secret configuration
+
+## Operations control documents
+
+- `docs/MASTER_CONTROL_DASHBOARD.md`
+- `docs/ASSET_AUDIT.md`
+- `docs/TASK_REGISTER.md`
+- `docs/AGENT_NETWORK.md`
