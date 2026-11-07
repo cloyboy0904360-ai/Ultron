@@ -27,6 +27,7 @@ Audit reviewed all reachable history (`git log --oneline --decorate --graph --al
 ## Outstanding risks
 
 1. **Secrets governance**: repository-level branch protections and required checks must be enforced in GitHub settings.
-2. **Runtime secret management**: secret vault integration is not yet implemented in code.
-3. **Operational scale**: current pathway is single-process SQLite; distributed reliability and concurrency controls remain future work.
-4. **Business integrations**: real payment gateway and shipping carrier APIs are not yet integrated.
+2. **Dependency graph support**: GitHub dependency-review checks require dependency graph/security analysis to be enabled in repository settings.
+3. **Runtime secret management**: secret vault integration is not yet implemented in code.
+4. **Operational scale**: current pathway is single-process SQLite; distributed reliability and concurrency controls remain future work.
+5. **Business integrations**: real payment gateway and shipping carrier APIs are not yet integrated.
