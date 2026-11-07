@@ -31,3 +31,12 @@ Audit reviewed all reachable history (`git log --oneline --decorate --graph --al
 3. **Runtime secret management**: secret vault integration is not yet implemented in code.
 4. **Operational scale**: current pathway is single-process SQLite; distributed reliability and concurrency controls remain future work.
 5. **Business integrations**: real payment gateway and shipping carrier APIs are not yet integrated.
+
+## Cross-repository operational findings (accessible scope)
+
+1. **Ultron**: open duplicate work was present (PR #7) and has been closed; hardened baseline merged via PR #8.
+2. **Ultron-2**: key workflows are failing before execution because account billing/spend-limit requirements block job startup.
+3. **ULTRON-**: repository currently contains only minimal content plus one open documentation PR.
+4. **omo-dori-mode-experimental**: scheduled workflow is operational and passing.
+
+These findings are evidence-linked in `docs/ASSET_AUDIT.md` and the live queue in issues `#12`-`#19`.
