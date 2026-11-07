@@ -19,7 +19,7 @@ def test_payment_to_delivery_success_path(db_path):
         customer_email="ops@ultron.local",
         product_id=1,
         quantity=2,
-        payment_token="tok_valid_123",
+        payment_token="ultron-test-token-approved",
         delivery_address="42 Tower Plaza",
     )
 
@@ -74,6 +74,6 @@ def test_insufficient_stock_is_rejected(db_path):
             customer_email="ops@ultron.local",
             product_id=3,
             quantity=999,
-            payment_token="tok_valid_123",
+            payment_token="ultron-test-token-approved",
             delivery_address="42 Tower Plaza",
         )

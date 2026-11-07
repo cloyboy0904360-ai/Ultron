@@ -89,7 +89,7 @@ def seed_catalog(db_path: str) -> None:
 
 
 def _payment_authorized(payment_token: str, amount_cents: int) -> bool:
-    return payment_token.startswith("tok_") and amount_cents > 0
+    return payment_token.startswith("ultron-test-token-") and amount_cents > 0
 
 
 def create_order(

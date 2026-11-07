@@ -1,0 +1,3 @@
+[allowlist]
+description = "Test fixtures with synthetic non-production payment tokens."
+paths = ["tests/test_pathway.py"]
