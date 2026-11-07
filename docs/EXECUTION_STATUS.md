@@ -9,7 +9,7 @@
 - ✅ Added `SECURITY.md` vulnerability reporting and controls.
 - ✅ Added architecture, master audit, and deployment documentation.
 - ✅ Added CI validation workflow.
-- ✅ Added security workflow (dependency review, pip-audit, gitleaks).
+- ✅ Added security workflow (pip-audit, gitleaks) and Dependabot updates.
 - ✅ Added environment separation artifacts for development/staging/production.
 
 ### Objective 2: one complete payment-to-delivery revenue pathway

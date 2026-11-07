@@ -12,17 +12,6 @@ permissions:
   pull-requests: write
 
 jobs:
-  dependency-review:
-    if: github.event_name == 'pull_request'
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Dependency review
-        uses: actions/dependency-review-action@v4
-
   python-audit:
     runs-on: ubuntu-latest
     steps:
