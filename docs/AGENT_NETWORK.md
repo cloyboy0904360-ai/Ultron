@@ -15,7 +15,7 @@ ULTRON has six required operational agent roles. Each role has a separate respon
 
 ## Cross-cutting system controls
 
-Security, compliance, approvals, credential handling, and audit enforcement are core-controller responsibilities, not a seventh autonomous agent. Search-engine and domain tasks are routed through PIXEL; NOVA owns their priority and dependency tracking.
+Security, compliance, approvals, credential handling, and audit enforcement are core-controller responsibilities, not a seventh autonomous agent. Search-engine and domain tasks are routed through PIXEL; NOVA owns their priority and dependency tracking. Repository security-setting review is assigned to FORGE, but applying protection changes remains approval-gated.
 
 ## Queue and evidence protocol
 
@@ -30,7 +30,7 @@ Security, compliance, approvals, credential handling, and audit enforcement are 
 
 **Status: NOT LIVE**
 
-The repository currently has an issue-and-label queue model. This is an auditable work ledger, **not yet six autonomous AI workers**. Independent worker processes, model/provider adapters, secure runtime credentials, lease recovery, and per-agent execution monitoring have not yet been provisioned or verified. No agent should be represented as continuously running until those controls are implemented and tested.
+The six-worker runtime is implemented in PR #27, which is ready for review against `main` using GitHub Actions matrix jobs, GitHub Issues queues, per-agent concurrency, leases, stale-lease recovery, bounded attempts, and structured evidence/failure comments. It is **not active on the default branch yet** ; CI, automated tests and security scans passed on the PR head, while the controlled live-task acceptance test remains pending. Initial handlers are deterministic and side-effect-free, not LLM-powered. No agent should be represented as live until PR #27 is merged and the workflow is exercised against controlled tasks.
 
 ## Access and financial boundaries
 

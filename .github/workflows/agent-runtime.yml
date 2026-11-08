@@ -1,0 +1,40 @@
+name: ULTRON Six-Agent Runtime
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  issues:
+    types: [opened, labeled, reopened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  agent:
+    if: (github.event_name != 'issues' || github.event.action != 'labeled' || github.event.label.name == 'status:ready' || startsWith(github.event.label.name, 'agent:')) && (github.event_name != 'issues' || github.event.issue.author_association == 'OWNER' || github.event.issue.author_association == 'COLLABORATOR' || github.event.issue.author_association == 'MEMBER')
+    name: ${{ matrix.agent }} worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        agent: [NOVA, FORGE, SALES, OPS, FINANCE, PIXEL]
+    concurrency:
+      group: ultron-agent-${{ matrix.agent }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run one bounded agent task
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ULTRON_AGENT: ${{ matrix.agent }}
+        run: python -m ultron.worker --agent "$ULTRON_AGENT"
