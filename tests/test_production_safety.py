@@ -110,3 +110,25 @@ def test_production_dispatch_rejects_empty_carrier_reference(db_path, monkeypatc
             result.order_id,
             carrier_dispatch=lambda address, order_id: " ",
         )
+
+
+def test_raw_payment_token_is_not_persisted(db_path, monkeypatch):
+    monkeypatch.setenv("ULTRON_ENV", "development")
+    token = "ultron-test-token-secret-value"
+    result = create_order(
+        db_path,
+        customer_email="customer@example.com",
+        product_id=1,
+        quantity=1,
+        payment_token=token,
+        delivery_address="1 Example Street",
+    )
+
+    with sqlite3.connect(db_path) as conn:
+        stored_token = conn.execute(
+            "SELECT payment_token FROM payments WHERE order_id = ?",
+            (result.order_id,),
+        ).fetchone()[0]
+
+    assert stored_token == "[REDACTED]"
+    assert token not in stored_token
