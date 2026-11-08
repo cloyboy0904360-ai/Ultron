@@ -4,6 +4,8 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from ultron.payments import PaymentVerifier, get_verifier
+
 
 def _utc_now() -> str:
     return datetime.now(tz=UTC).isoformat()
@@ -15,6 +17,7 @@ class OrderResult:
     payment_status: str
     delivery_status: str
     total_cents: int
+    duplicate: bool = False
 
 
 def initialize_db(db_path: str) -> None:
@@ -35,7 +38,8 @@ def initialize_db(db_path: str) -> None:
                 total_cents INTEGER NOT NULL CHECK(total_cents > 0),
                 payment_status TEXT NOT NULL,
                 delivery_status TEXT NOT NULL,
-                created_at TEXT NOT NULL
+                created_at TEXT NOT NULL,
+                idempotency_key TEXT
             );
 
             CREATE TABLE IF NOT EXISTS order_items (
@@ -64,7 +68,40 @@ def initialize_db(db_path: str) -> None:
                 created_at TEXT NOT NULL,
                 dispatched_at TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY,
+                event TEXT NOT NULL,
+                source TEXT NOT NULL,
+                verified_source INTEGER NOT NULL,
+                payload TEXT NOT NULL,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS fulfilment (
+                order_id INTEGER PRIMARY KEY REFERENCES orders(id),
+                state TEXT NOT NULL,
+                payment_provider TEXT,
+                payment_ref TEXT,
+                supplier_name TEXT,
+                supplier_ref TEXT,
+                supplier_cost_cents INTEGER,
+                delivery_cost_cents INTEGER,
+                fees_cents INTEGER,
+                tracking_id TEXT,
+                carrier TEXT,
+                delivered_at TEXT,
+                updated_at TEXT NOT NULL
+            );
             """
+        )
+        columns = [r[1] for r in conn.execute("PRAGMA table_info(orders)")]
+        if "idempotency_key" not in columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN idempotency_key TEXT")
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_orders_idem ON orders(idempotency_key) "
+            "WHERE idempotency_key IS NOT NULL"
         )
 
 
@@ -88,10 +125,6 @@ def seed_catalog(db_path: str) -> None:
         )
 
 
-def _payment_authorized(payment_token: str, amount_cents: int) -> bool:
-    return payment_token.startswith("ultron-test-token-") and amount_cents > 0
-
-
 def create_order(
     db_path: str,
     *,
@@ -100,6 +133,9 @@ def create_order(
     quantity: int,
     payment_token: str,
     delivery_address: str,
+    idempotency_key: str | None = None,
+    verifier: PaymentVerifier | None = None,
+    currency: str = "gbp",
 ) -> OrderResult:
     if quantity <= 0:
         raise ValueError("quantity must be positive")
@@ -110,7 +146,16 @@ def create_order(
 
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("BEGIN")
+        conn.execute("BEGIN IMMEDIATE")
+
+        if idempotency_key:
+            prior = conn.execute(
+                "SELECT id, payment_status, delivery_status, total_cents FROM orders "
+                "WHERE idempotency_key = ?",
+                (idempotency_key,),
+            ).fetchone()
+            if prior:
+                return OrderResult(*prior, duplicate=True)
 
         product = conn.execute(
             "SELECT name, price_cents, stock FROM products WHERE id = ?",
@@ -123,15 +168,17 @@ def create_order(
             raise ValueError("insufficient stock")
 
         total_cents = unit_price_cents * quantity
-        payment_status = "AUTHORIZED" if _payment_authorized(payment_token, total_cents) else "DECLINED"
+        verifier = verifier or get_verifier()
+        paid = verifier.verify(payment_token, total_cents, currency)
+        payment_status = "AUTHORIZED" if paid else "DECLINED"
         delivery_status = "READY" if payment_status == "AUTHORIZED" else "CANCELLED"
 
         order_cursor = conn.execute(
             """
-            INSERT INTO orders(customer_email, total_cents, payment_status, delivery_status, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO orders(customer_email, total_cents, payment_status, delivery_status, created_at, idempotency_key)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (customer_email, total_cents, payment_status, delivery_status, _utc_now()),
+            (customer_email, total_cents, payment_status, delivery_status, _utc_now(), idempotency_key),
         )
         order_id = int(order_cursor.lastrowid)
 
