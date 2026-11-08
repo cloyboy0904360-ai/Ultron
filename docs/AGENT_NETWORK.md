@@ -28,9 +28,11 @@ Security, compliance, approvals, credential handling, and audit enforcement are 
 
 ## Current implementation status
 
-**Status: NOT LIVE**
+<badge>ACTIVE — LIMITED SMOKE TEST VERIFIED</badge>
 
-The six-worker runtime is implemented in PR #27, which is ready for review against `main` using GitHub Actions matrix jobs, GitHub Issues queues, per-agent concurrency, leases, stale-lease recovery, bounded attempts, and structured evidence/failure comments. It is **not active on the default branch yet** ; CI, automated tests and security scans passed on the PR head, while the controlled live-task acceptance test remains pending. Initial handlers are deterministic and side-effect-free, not LLM-powered. No agent should be represented as live until PR #27 is merged and the workflow is exercised against controlled tasks.
+The six-worker GitHub Actions runtime was merged to `main` in PR #27. The first controlled NOVA task, issue #28, completed successfully: the worker acquired a lease, executed the deterministic objective-breakdown handler, posted structured evidence, and changed the issue to `status:verified`. This verifies one NOVA execution path only; the other five agent roles and full operational acceptance remain to be tested.
+
+The handlers are deterministic and side-effect-free, not LLM-powered. The runtime is scheduled/event-driven, not a continuously resident 24/7 service. No agent should be represented as a general-purpose AI agent or as independently verified until its own tests and acceptance evidence exist.
 
 ## Access and financial boundaries
 
