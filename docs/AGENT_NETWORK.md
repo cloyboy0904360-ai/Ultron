@@ -1,35 +1,41 @@
-# ULTRON Agent Network
+# ULTRON Six-Agent Operating Network
 
-This repository uses a **task-queue model** with GitHub issues as the execution ledger.
+ULTRON has six required operational agent roles. Each role has a separate responsibility boundary, task queue, status, and evidence trail. The central controller owns scheduling, authentication, policy enforcement, and audit records.
 
-## Operational model
+## Six operational agents
 
-- Queue source: `Ultron` issue tracker.
-- Assignment mechanism: `agent:*` labels.
-- Status mechanism: `status:*` labels (`ready`, `running`, `verified`, `blocked`, `awaiting-approval`, `failed`, `paused`).
-- Evidence requirement: each task must link commits, PRs, workflow runs, or external proof.
-
-## Agent responsibilities and queues
-
-| Agent | Responsibility | Queue filter | Current queue |
+| Agent | Independent responsibility | Queue filter | Authority boundary |
 | --- | --- | --- | --- |
-| NOVA | Central prioritization, dashboard maintenance, sequencing | `label:agent:nova` | #12 |
-| FORGE | Repository code, integrations, tests, deployments | `label:agent:forge` | #13 |
-| SALES | Revenue offers, acquisition, conversion execution | `label:agent:sales` | #14 |
-| OPS | Workflow execution, fulfilment reliability | `label:agent:ops` | #15 |
-| FINANCE | Revenue/expense reconciliation and evidence | `label:agent:finance` | #16 |
-| PIXEL | Customer-facing pages/materials/listings | `label:agent:pixel` | #17 |
-| SEO | Domain/indexing/backlink monitoring | `label:agent:seo` | #18 |
-| GUARDIAN | Security/compliance controls and approvals | `label:agent:guardian` | #19 |
+| NOVA | Prioritization, orchestration, dashboard and dependency management | `label:agent:nova` | May sequence and assign work; cannot approve spending or override policy |
+| FORGE | Core code, integrations, tests, CI and deployment engineering | `label:agent:forge` | May propose code changes; production promotion requires approval and passing checks |
+| SALES | Lead qualification, offer preparation, sales pipeline and conversion analysis | `label:agent:sales` | Drafts customer communications; no sending, commitments or claims of sale without authorization/evidence |
+| OPS | Order processing, inventory checks, supplier and fulfilment coordination | `label:agent:ops` | No dispatch or stock commitment without verified payment and supplier/carrier evidence |
+| FINANCE | Payment reconciliation, expense controls, margin and ledger reporting | `label:agent:finance` | Read/reconcile only by default; no transfers, refunds or spending without specific approval |
+| PIXEL | Product research, listings, customer-facing assets, marketing and SEO | `label:agent:pixel` | Can prepare drafts; publication, paid promotion and external changes require approval |
 
-## Access boundaries
+## Cross-cutting system controls
+
+Security, compliance, approvals, credential handling, and audit enforcement are core-controller responsibilities, not a seventh autonomous agent. Search-engine and domain tasks are routed through PIXEL; NOVA owns their priority and dependency tracking.
+
+## Queue and evidence protocol
+
+- Queue source: GitHub issues in this repository.
+- Assignment: `agent:<name>` labels.
+- Status: `status:ready`, `status:running`, `status:verified`, `status:blocked`, `status:awaiting-approval`, `status:failed`, `status:paused`.
+- Every task must link commits, pull requests, workflow runs, test results, or external evidence.
+- Each agent must have an independent lease/heartbeat and must not claim another agent's task.
+- A task is VERIFIED only after independent evidence confirms its outcome.
+
+## Current implementation status
+
+<badge>NOT LIVE</badge>
+
+The repository currently has an issue-and-label queue model. This is an auditable work ledger, **not yet six autonomous AI workers**. Independent worker processes, model/provider adapters, secure runtime credentials, lease recovery, and per-agent execution monitoring have not yet been provisioned or verified. No agent should be represented as continuously running until those controls are implemented and tested.
+
+## Access and financial boundaries
 
 - Least privilege only.
-- No credentials are stored in this repository.
-- No spend, irreversible financial commitments, or destructive data operations without explicit approval.
-- Branch-protection and security-analysis settings currently require permissions not available to this session.
-
-## Tooling note
-
-Direct Copilot Automation Group provisioning tools were not available in this session.  
-Execution is therefore implemented with GitHub issues + labels as the live, auditable queue system.
+- No credentials or personal data in source code, logs, docs, or CI output.
+- No spend, irreversible financial commitments, customer messages, or destructive operations without explicit approval.
+- No simulated payment, shipment, sale, or delivery may be represented as real.
+- Production promotion requires passing CI/security checks, configured secrets, a tested payment provider, and a tested fulfilment provider.
