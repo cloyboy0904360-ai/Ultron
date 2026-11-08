@@ -28,9 +28,9 @@ Security, compliance, approvals, credential handling, and audit enforcement are 
 
 ## Current implementation status
 
-<badge>ACTIVE — LIMITED SMOKE TEST VERIFIED</badge>
+**Status: ACTIVE — SIX AGENT SMOKE TESTS EXECUTED**
 
-The six-worker GitHub Actions runtime was merged to `main` in PR #27. The first controlled NOVA task, issue #28, completed successfully: the worker acquired a lease, executed the deterministic objective-breakdown handler, posted structured evidence, and changed the issue to `status:verified`. This verifies one NOVA execution path only; the other five agent roles and full operational acceptance remain to be tested.
+The six-worker GitHub Actions runtime was merged to `main` in PR #27. Controlled smoke tasks #28-#33 exercised all six role workers. NOVA (#28), FORGE (#29), SALES (#30), FINANCE (#32), and PIXEL (#33) completed their allowlisted handlers and posted structured evidence. OPS (#31) correctly returned BLOCKED because all payment, supplier-stock, delivery-method, and address evidence flags were false; it explicitly performed no dispatch. This verifies one bounded handler path for each role, not full production readiness.
 
 The handlers are deterministic and side-effect-free, not LLM-powered. The runtime is scheduled/event-driven, not a continuously resident 24/7 service. No agent should be represented as a general-purpose AI agent or as independently verified until its own tests and acceptance evidence exist.
 
