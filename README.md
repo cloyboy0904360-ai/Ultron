@@ -34,3 +34,4 @@ python scripts/validate_repository.py
 - `docs/ASSET_AUDIT.md`
 - `docs/TASK_REGISTER.md`
 - `docs/AGENT_NETWORK.md`
+- `docs/CORE_RELEASE_GATE.md`
