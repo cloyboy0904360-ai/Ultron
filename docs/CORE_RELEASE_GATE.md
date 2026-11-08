@@ -11,7 +11,7 @@ The repository is a tested foundation, not a live commerce operating system. Pro
 | Gate | Required evidence | Current status |
 | --- | --- | --- |
 | Core controller | Secure runtime, validated configuration, task lifecycle, crash recovery and health checks | BLOCKED — controller runtime not implemented |
-| Six independent agents | Separate queues, worker identities, permissions, leases, retries and audit records | PARTIAL — runtime code in PR #27, ready for review against `main`; CI/security checks pass, live-task acceptance pending |
+| Six independent agents | Separate queues, worker identities, permissions, leases, retries and audit records | PARTIAL — runtime merged to main; one NOVA smoke task passed; remaining five agents and full acceptance pending |
 | AI execution adapters | Approved provider, credentials in secret storage, rate limits and failure handling | BLOCKED — provider not connected |
 | Payment | Provider adapter, signed webhook verification, idempotency, amount/currency/order matching and settlement reconciliation | BLOCKED — no live provider adapter |
 | Fulfilment | Supplier/carrier adapter, verified dispatch response and delivery confirmation | BLOCKED — no live provider adapter |
