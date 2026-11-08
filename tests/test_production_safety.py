@@ -50,7 +50,7 @@ def test_test_token_remains_available_only_outside_production(db_path, monkeypat
 
 
 def test_dispatch_rejects_production_without_carrier_confirmation(db_path, monkeypatch):
-    monkeypatch.setenv("ULTRON_ENV", "production")
+    monkeypatch.setenv("ULTRON_ENV", "development")
     result = create_order(
         db_path,
         customer_email="customer@example.com",
@@ -60,5 +60,6 @@ def test_dispatch_rejects_production_without_carrier_confirmation(db_path, monke
         delivery_address="1 Example Street",
     )
 
-    with pytest.raises(ValueError, match="production dispatch requires carrier confirmation"):
+    monkeypatch.setenv("ULTRON_ENV", "production")
+    with pytest.raises(ValueError, match="production dispatch requires configured carrier adapter"):
         dispatch_delivery(db_path, result.order_id)
