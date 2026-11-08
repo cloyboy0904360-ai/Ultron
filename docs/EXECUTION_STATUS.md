@@ -30,6 +30,8 @@
 - Added order idempotency keys and an `events` audit table, agent registry (`ultron/agents.py`), event/trigger registry (`ultron/events.py`, `docs/TRIGGER_REGISTRY.md`) and 6 new tests (9 total passing locally).
 - NOT verified: Stripe verification against the real API (no key), any live webhook, supplier, listing or domain. The audit environment had no outbound web access beyond GitHub, so AIPlugins.net, EVChargingHub.co, Extensibility.xyz, BitOnChain.xyz and childrenssafty.myshopify.com remain UNVERIFIED.
 - Highest-priority opportunity: task #13/#14, a first paid order through Stripe, which needs owner-provided Stripe test-mode access and a product with a verified supplier. No demand or profit figures exist yet and none are claimed.
+- GitHub access is working (PR #23 open, checks green). Make, Stripe, supplier, and carrier access are not. No customer, payment, dispatch, or delivery has been executed.
+- Added `ultron/fulfilment.py`: an order cannot close or reconcile unless payment, supplier, dispatch, tracking, and delivery evidence are recorded in order. Test providers and known-loss orders are refused. This is a gate, not a completed sale. 14 tests passing locally.
 
 ## Session history
 

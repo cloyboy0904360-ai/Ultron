@@ -78,6 +78,22 @@ def initialize_db(db_path: str) -> None:
                 status TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS fulfilment (
+                order_id INTEGER PRIMARY KEY REFERENCES orders(id),
+                state TEXT NOT NULL,
+                payment_provider TEXT,
+                payment_ref TEXT,
+                supplier_name TEXT,
+                supplier_ref TEXT,
+                supplier_cost_cents INTEGER,
+                delivery_cost_cents INTEGER,
+                fees_cents INTEGER,
+                tracking_id TEXT,
+                carrier TEXT,
+                delivered_at TEXT,
+                updated_at TEXT NOT NULL
+            );
             """
         )
         columns = [r[1] for r in conn.execute("PRAGMA table_info(orders)")]
