@@ -16,21 +16,28 @@ Every task follows:
 
 `CORRECT -> COMPLETE -> CONNECTED -> WORKING -> LIVE -> MEASURED -> EVIDENCE CAPTURED`
 
-## Live task queue
+## Six-agent operational queue
 
-| Task | Agent | Status | Evidence target | Tracker |
+| Task | Agent / owner | Status | Evidence target | Tracker |
 | --- | --- | --- | --- | --- |
-| Maintain master dashboard and priority loop | NOVA | RUNNING | Dashboard updates tied to run/PR evidence | #12 |
-| Integrate real payment provider adapter | FORGE | BLOCKED | Signed payment auth + webhook verification evidence | #13 |
-| Close first paid transaction at £0 extra spend | SALES | BLOCKED | Settled payment + fulfilled delivery record | #14 |
-| Validate customer-to-delivery runbook in staging | OPS | READY | Passing scenario evidence and runbook result log | #15 |
-| Build consolidated financial evidence ledger | FINANCE | READY | Reconciled transaction ledger with traceable refs | #16 |
-| Prepare customer-facing assets for first offer | PIXEL | READY | Published assets linked to real fulfilment path | #17 |
-| Audit domain/indexing/SEO asset network | SEO | BLOCKED | Domain/DNS/indexing evidence per property | #18 |
-| Enforce branch protection and security analysis | GUARDIAN | AWAITING APPROVAL | Enabled settings and policy screenshots/API proof | #19 |
+| Maintain master dashboard, priorities and dependency sequencing | NOVA | RUNNING | Dashboard updates tied to run/PR evidence | #12 |
+| Build secure core, integrations, tests and deployment controls | FORGE | BLOCKED | Passing tests, provider adapters, release evidence | #13 |
+| Close first paid transaction through an approved channel | SALES | BLOCKED | Settled provider payment plus customer/order evidence | #14 |
+| Validate customer-to-delivery workflow and supplier/carrier operations | OPS | READY | Provider acceptance, dispatch and delivery evidence | #15 |
+| Build reconciled financial ledger and transaction controls | FINANCE | READY | Reconciled ledger with traceable provider references | #16 |
+| Prepare product research, customer-facing assets, listings and SEO | PIXEL | READY | Approved assets connected to a verified fulfilment path | #17, #18 |
 
-## Verified execution in this session
+## Core-controller security responsibilities
+
+Security, compliance, approvals, credential handling, and policy enforcement are mandatory core-controller controls, not a separate autonomous agent. Guardian work previously tracked under #19 remains a core release dependency and requires explicit evidence before production.
+
+## Current verified execution evidence
 
 1. Closed duplicate PR: #7.
-2. Merged hardening + pathway PR: #8 (squash merge to `main`).
-3. Created agent/status labels and established issue-based queues (#12-#19).
+2. Merged repository hardening and initial pathway PR: #8.
+3. Created agent/status labels and issue-based queues: #12-#19.
+4. Production-safety patch is under review in PR #26; it is not merged or deployed.
+
+## Runtime truth
+
+The six roles currently have documented responsibilities and issue queues. They are **not yet six independent autonomous workers**. Worker processes, model/provider adapters, leases, heartbeats, retries, and continuous monitoring remain BLOCKED. See `docs/CORE_RELEASE_GATE.md`.
