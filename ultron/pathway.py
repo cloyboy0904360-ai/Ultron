@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import sqlite3
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -88,8 +90,13 @@ def seed_catalog(db_path: str) -> None:
         )
 
 
+def _is_production() -> bool:
+    return os.getenv("ULTRON_ENV", "development").strip().lower() == "production"
+
+
 def _payment_authorized(payment_token: str, amount_cents: int) -> bool:
-    return payment_token.startswith("ultron-test-token-") and amount_cents > 0
+    # Predictable test tokens are strictly a local-development facility.
+    return not _is_production() and payment_token.startswith("ultron-test-token-") and amount_cents > 0
 
 
 def create_order(
@@ -174,19 +181,31 @@ def create_order(
         )
 
 
-def dispatch_delivery(db_path: str, order_id: int) -> str:
-    tracking_id = f"ULTRON-{order_id}-{int(datetime.now(tz=UTC).timestamp())}"
+def dispatch_delivery(
+    db_path: str,
+    order_id: int,
+    *,
+    carrier_dispatch: Callable[[str, int], str] | None = None,
+) -> str:
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         row = conn.execute(
-            "SELECT status FROM deliveries WHERE order_id = ?",
+            "SELECT status, address FROM deliveries WHERE order_id = ?",
             (order_id,),
         ).fetchone()
         if row is None:
             raise ValueError("delivery not found")
-        current_status = row[0]
+        current_status, address = row
         if current_status != "READY":
             raise ValueError(f"delivery not dispatchable from status={current_status}")
+        if _is_production() and carrier_dispatch is None:
+            raise ValueError("production dispatch requires configured carrier adapter")
+        if carrier_dispatch is None:
+            tracking_id = f"TEST-ULTRON-{order_id}-{int(datetime.now(tz=UTC).timestamp())}"
+        else:
+            tracking_id = carrier_dispatch(address, order_id)
+            if not isinstance(tracking_id, str) or not tracking_id.strip():
+                raise ValueError("carrier adapter did not return a valid tracking identifier")
         conn.execute(
             """
             UPDATE deliveries
