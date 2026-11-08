@@ -33,7 +33,7 @@ def order(db, token, key=None, verifier=None):
 
 def test_all_required_events_and_agents_defined():
     assert set(REQUIRED_EVENTS) == set(EVENTS)
-    assert len(AGENTS) == 10
+    assert len(AGENTS) == 13
     assert validate_registry() == []
 
 

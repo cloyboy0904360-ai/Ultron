@@ -10,6 +10,9 @@ REQUIRED_PATHS = [
     "docs/ASSET_AUDIT.md",
     "docs/TASK_REGISTER.md",
     "docs/AGENT_NETWORK.md",
+    "docs/CONTROLLER.md",
+    "docs/ASSET_REGISTRY.md",
+    "docs/FULFILMENT_LIFECYCLE.md",
 ]
 
 
