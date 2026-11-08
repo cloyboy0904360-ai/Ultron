@@ -155,7 +155,7 @@ def create_order(
             INSERT INTO payments(order_id, amount_cents, status, payment_token, created_at)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (order_id, total_cents, payment_status, payment_token, _utc_now()),
+            (order_id, total_cents, payment_status, "[REDACTED]", _utc_now()),
         )
 
         if payment_status == "AUTHORIZED":
