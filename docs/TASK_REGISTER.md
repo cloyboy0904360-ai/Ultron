@@ -38,8 +38,8 @@ Security, compliance, approvals, credential handling, and policy enforcement are
 3. Created agent/status labels and issue-based queues: #12-#19.
 4. Production-safety baseline merged to `main` in PR #26; this is a code change, not a production deployment.
 5. Six-agent GitHub Actions runtime merged to `main` in PR #27; CI, automated tests, dependency audit and Gitleaks passed on the merged PR head.
-6. Controlled NOVA smoke test issue #28 completed: lease acquired, deterministic handler executed, structured result recorded, and issue moved to `status:verified`.
+6. Controlled smoke tasks #28-#33 exercised all six workers: NOVA, FORGE, SALES, FINANCE and PIXEL completed with structured evidence; OPS returned BLOCKED as expected because required fulfilment evidence was absent, with `dispatch_performed: false`.
 
 ## Runtime truth
 
-The six role-scoped worker processes, GitHub Issues queue integration, concurrency controls, lease recovery and evidence reporting are merged to `main`. One NOVA execution path is VERIFIED by issue #28. The remaining five agent roles, scheduled recurrence, stale-lease recovery in the live workflow, and complete acceptance matrix remain unverified. Task handlers are deterministic and side-effect-free; LLM provider integration and continuous always-on hosting remain BLOCKED. See `docs/GITHUB_ACTIONS_RUNTIME.md` and `docs/CORE_RELEASE_GATE.md`.
+The six role-scoped worker processes, GitHub Issues queue integration, concurrency controls, lease recovery and evidence reporting are merged to `main`. All six role handlers have a controlled smoke-test result in issues #28-#33. Five completed; OPS correctly failed closed as BLOCKED with no dispatch. Scheduled recurrence, stale-lease recovery in the live workflow, concurrency under contention, bounded retries, and the complete acceptance matrix remain unverified. Task handlers are deterministic and side-effect-free; LLM provider integration and continuous always-on hosting remain BLOCKED. See `docs/GITHUB_ACTIONS_RUNTIME.md` and `docs/CORE_RELEASE_GATE.md`.
