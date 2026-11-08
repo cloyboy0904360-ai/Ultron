@@ -28,7 +28,7 @@ def test_payment_to_delivery_success_path(db_path):
     assert result.total_cents == 4998
 
     tracking_id = dispatch_delivery(db_path, result.order_id)
-    assert tracking_id.startswith("ULTRON-")
+    assert tracking_id.startswith("TEST-ULTRON-")
 
     with sqlite3.connect(db_path) as conn:
         stock = conn.execute("SELECT stock FROM products WHERE id = 1").fetchone()[0]
