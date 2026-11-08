@@ -28,7 +28,7 @@ Security, compliance, approvals, credential handling, and audit enforcement are 
 
 ## Current implementation status
 
-<badge>NOT LIVE</badge>
+**Status: NOT LIVE**
 
 The repository currently has an issue-and-label queue model. This is an auditable work ledger, **not yet six autonomous AI workers**. Independent worker processes, model/provider adapters, secure runtime credentials, lease recovery, and per-agent execution monitoring have not yet been provisioned or verified. No agent should be represented as continuously running until those controls are implemented and tested.
 
