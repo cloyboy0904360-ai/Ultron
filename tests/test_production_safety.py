@@ -63,3 +63,50 @@ def test_dispatch_rejects_production_without_carrier_confirmation(db_path, monke
     monkeypatch.setenv("ULTRON_ENV", "production")
     with pytest.raises(ValueError, match="production dispatch requires configured carrier adapter"):
         dispatch_delivery(db_path, result.order_id)
+
+
+def test_production_dispatch_uses_carrier_adapter_reference(db_path, monkeypatch):
+    monkeypatch.setenv("ULTRON_ENV", "development")
+    result = create_order(
+        db_path,
+        customer_email="customer@example.com",
+        product_id=1,
+        quantity=1,
+        payment_token="ultron-test-token-approved",
+        delivery_address="1 Example Street",
+    )
+    monkeypatch.setenv("ULTRON_ENV", "production")
+
+    tracking_id = dispatch_delivery(
+        db_path,
+        result.order_id,
+        carrier_dispatch=lambda address, order_id: "CARRIER-TRACK-123",
+    )
+
+    assert tracking_id == "CARRIER-TRACK-123"
+    with sqlite3.connect(db_path) as conn:
+        delivery = conn.execute(
+            "SELECT status, tracking_id FROM deliveries WHERE order_id = ?",
+            (result.order_id,),
+        ).fetchone()
+    assert delivery == ("DISPATCHED", "CARRIER-TRACK-123")
+
+
+def test_production_dispatch_rejects_empty_carrier_reference(db_path, monkeypatch):
+    monkeypatch.setenv("ULTRON_ENV", "development")
+    result = create_order(
+        db_path,
+        customer_email="customer@example.com",
+        product_id=1,
+        quantity=1,
+        payment_token="ultron-test-token-approved",
+        delivery_address="1 Example Street",
+    )
+    monkeypatch.setenv("ULTRON_ENV", "production")
+
+    with pytest.raises(ValueError, match="valid tracking identifier"):
+        dispatch_delivery(
+            db_path,
+            result.order_id,
+            carrier_dispatch=lambda address, order_id: " ",
+        )
