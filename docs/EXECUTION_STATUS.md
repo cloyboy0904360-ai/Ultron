@@ -25,6 +25,15 @@
 
 ## Current session execution update
 
+- Phase 1 audit (2026-11-08): baseline `ruff check .` pass, `pytest` 3 passed, `validate_repository.py` pass. Last CI/Security runs on `main` succeeded (`42360396658`, `42360396614`).
+- Defect found: `_payment_authorized` approved any `ultron-test-token-*` string while `config/environments/production.json` sets `payment_mode: live`. Replaced by `ultron/payments.py` (fail-closed Stripe verification; test verifier only outside live).
+- Added order idempotency keys and an `events` audit table, agent registry (`ultron/agents.py`), event/trigger registry (`ultron/events.py`, `docs/TRIGGER_REGISTRY.md`) and 6 new tests (9 total passing locally).
+- NOT verified: Stripe verification against the real API (no key), any live webhook, supplier, listing or domain. The audit environment had no outbound web access beyond GitHub, so AIPlugins.net, EVChargingHub.co, Extensibility.xyz, BitOnChain.xyz and childrenssafty.myshopify.com remain UNVERIFIED.
+- Highest-priority opportunity: task #13/#14, a first paid order through Stripe, which needs owner-provided Stripe test-mode access and a product with a verified supplier. No demand or profit figures exist yet and none are claimed.
+
+## Session history
+
+
 - ✅ Closed duplicate open pull request `#7` in `Ultron`.
 - ✅ Merged verified hardening PR `#8` to `main`.
 - ✅ Audited all accessible GitHub repositories in scope (`Ultron`, `Ultron-2`, `ULTRON-`, `omo-dori-mode-experimental`).
