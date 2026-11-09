@@ -5,8 +5,8 @@ Secure, testable foundation for the ULTRON operating system.
 ## Current scope
 
 - Harden repository governance, security controls, and CI validation.
-- Provide one complete **payment-to-delivery revenue pathway** with automated tests.
-- Establish development, staging, and production separation with safe deployment procedures.
+- Build a guarded payment-to-delivery pathway with automated tests. Live payment-provider verification, webhook processing, and fulfilment integrations must be independently configured and verified before production use.
+- Maintain development, staging, and production separation with safe deployment procedures.
 
 ## Quick start
 
@@ -35,5 +35,4 @@ python scripts/validate_repository.py
 - `docs/TASK_REGISTER.md`
 - `docs/AGENT_NETWORK.md`
 - `docs/CORE_RELEASE_GATE.md`
-- `docs/GITHUB_ACTIONS_RUNTIME.md`
 - `docs/GITHUB_ACTIONS_RUNTIME.md`
