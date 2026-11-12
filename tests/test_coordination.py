@@ -1,6 +1,3 @@
-import json
-import sqlite3
-
 import pytest
 
 from ultron.coordination import (
