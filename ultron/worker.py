@@ -154,7 +154,7 @@ def main() -> int:
         result = AgentWorker(args.agent, GitHubQueue.from_environment()).run_once()
         print(json.dumps(result, ensure_ascii=False))
         return 0 if result["status"] != "FAILED" else 1
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - CLI boundary must report unexpected startup/runtime failures
         print(json.dumps({"agent": args.agent.upper(), "status": "FAILED", "error": str(exc)[:1000]}))
         return 1
 
