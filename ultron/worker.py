@@ -120,8 +120,8 @@ class AgentWorker:
             reporting_errors = []
             try:
                 self.queue.add_comment(number,
-                    f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': 'FAILED'})} -->\\n"
-                    f"**ULTRON {self.agent} failure report**\\n\\n{FENCE}json\\n{json.dumps(failure, indent=2)}\\n{FENCE}")
+                    f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': 'FAILED'})} -->\n"
+                    f"**ULTRON {self.agent} failure report**\n\n{FENCE}json\n{json.dumps(failure, indent=2)}\n{FENCE}")
             except Exception as report_exc:
                 reporting_errors.append({
                     "operation": "record_failure_evidence",
