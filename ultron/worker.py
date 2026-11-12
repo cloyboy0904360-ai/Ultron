@@ -111,17 +111,40 @@ class AgentWorker:
                 f"**ULTRON {self.agent} evidence**\n\n{FENCE}json\n{json.dumps(evidence, ensure_ascii=False, indent=2)}\n{FENCE}")
             self.queue.set_status(issue, "verified" if result.status == "COMPLETED" else "blocked")
             return {"agent": self.agent, "status": result.status, "issue": number, "run_id": run_id}
-        except (ValueError, TypeError, PermissionError, GitHubAPIError) as exc:
+        except Exception as exc:
             failure = {
                 "agent": self.agent, "issue": number, "run_id": run_id, "attempt": attempt,
                 "status": "FAILED", "error_type": type(exc).__name__, "error": str(exc)[:1000],
                 "failed_at": utc_now().isoformat(),
             }
-            self.queue.add_comment(number,
-                f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': 'FAILED'})} -->\n"
-                f"**ULTRON {self.agent} failure report**\n\n{FENCE}json\n{json.dumps(failure, indent=2)}\n{FENCE}")
-            self.queue.set_status(issue, "failed")
-            return {"agent": self.agent, "status": "FAILED", "issue": number, "run_id": run_id}
+            reporting_errors = []
+            try:
+                self.queue.add_comment(number,
+                    f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': 'FAILED'})} -->\\n"
+                    f"**ULTRON {self.agent} failure report**\\n\\n{FENCE}json\\n{json.dumps(failure, indent=2)}\\n{FENCE}")
+            except Exception as report_exc:
+                reporting_errors.append({
+                    "operation": "record_failure_evidence",
+                    "error_type": type(report_exc).__name__,
+                    "error": str(report_exc)[:500],
+                })
+            try:
+                self.queue.set_status(issue, "failed")
+            except Exception as status_exc:
+                reporting_errors.append({
+                    "operation": "set_failed_status",
+                    "error_type": type(status_exc).__name__,
+                    "error": str(status_exc)[:500],
+                })
+            if reporting_errors:
+                print(json.dumps({
+                    "agent": self.agent, "status": "FAILED", "issue": number,
+                    "run_id": run_id, "failure_reporting_errors": reporting_errors,
+                }), file=sys.stderr)
+            return {
+                "agent": self.agent, "status": "FAILED", "issue": number,
+                "run_id": run_id, "failure_reporting_errors": reporting_errors,
+            }
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -131,7 +154,7 @@ def main() -> int:
         result = AgentWorker(args.agent, GitHubQueue.from_environment()).run_once()
         print(json.dumps(result, ensure_ascii=False))
         return 0 if result["status"] != "FAILED" else 1
-    except (GitHubAPIError, ValueError, TypeError, PermissionError) as exc:
+    except Exception as exc:
         print(json.dumps({"agent": args.agent.upper(), "status": "FAILED", "error": str(exc)[:1000]}))
         return 1
 
