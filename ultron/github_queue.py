@@ -13,6 +13,7 @@ from typing import Any
 class GitHubAPIError(RuntimeError):
     pass
 
+
 class GitHubQueue:
     def __init__(self, token: str, repository: str, api_url: str = "https://api.github.com"):
         if not token or "/" not in repository:
@@ -60,17 +61,42 @@ class GitHubQueue:
                 raise GitHubAPIError(f"GitHub API request failed: {exc}") from exc
         raise GitHubAPIError("GitHub API request exhausted retries")
 
+    def _paginated_get(self, path: str) -> list[dict[str, Any]]:
+        """Read every page; fail closed rather than return a truncated history."""
+        records: list[dict[str, Any]] = []
+        seen: set[tuple[str, Any]] = set()
+        page = 1
+        while True:
+            separator = "&" if "?" in path else "?"
+            result = self._request(
+                "GET", f"{path}{separator}per_page=100&page={page}"
+            )
+            if not isinstance(result, list):
+                raise GitHubAPIError("GitHub paginated endpoint returned a non-list response")
+            for item in result:
+                if not isinstance(item, dict):
+                    raise GitHubAPIError("GitHub paginated endpoint returned an invalid record")
+                identifier = item.get("id", item.get("number"))
+                key = ("record", identifier) if identifier is not None else ("page", (page, len(records)))
+                if key not in seen:
+                    seen.add(key)
+                    records.append(item)
+            if len(result) < 100:
+                return records
+            page += 1
+
     def list_issues(self, agent: str, status: str) -> list[dict[str, Any]]:
         labels = urllib.parse.quote(f"agent:{agent.lower()},status:{status.lower()}", safe=",")
-        issues = self._request("GET", f"/issues?state=open&labels={labels}&per_page=100")
+        issues = self._paginated_get(f"/issues?state=open&labels={labels}")
         trusted = {"OWNER", "COLLABORATOR", "MEMBER"}
         return [
-            item for item in issues
+            item
+            for item in issues
             if "pull_request" not in item and item.get("author_association") in trusted
         ]
 
     def comments(self, issue_number: int) -> list[dict[str, Any]]:
-        return self._request("GET", f"/issues/{issue_number}/comments?per_page=100")
+        return self._paginated_get(f"/issues/{issue_number}/comments")
 
     def add_comment(self, issue_number: int, body: str) -> None:
         self._request("POST", f"/issues/{issue_number}/comments", {"body": body})
