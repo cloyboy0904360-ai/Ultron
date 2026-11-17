@@ -1,0 +1,32 @@
+name: ULTRON Composio Smoke Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  composio-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ULTRON and Composio
+        run: python -m pip install -e .
+
+      - name: Run read-only Composio GitHub smoke test
+        env:
+          COMPOSIO_API_KEY: ${{ secrets.COMPOSIO_API_KEY }}
+          ULTRON_COMPOSIO_USER_ID: ${{ vars.ULTRON_COMPOSIO_USER_ID }}
+          ULTRON_COMPOSIO_SESSION_ID: ${{ secrets.ULTRON_COMPOSIO_SESSION_ID }}
+          COMPOSIO_SESSION_CONFIG_ID: ${{ vars.COMPOSIO_SESSION_CONFIG_ID }}
+          ULTRON_COMPOSIO_GITHUB_ACCOUNT: ${{ vars.ULTRON_COMPOSIO_GITHUB_ACCOUNT }}
+        run: python scripts/composio_smoke_test.py
