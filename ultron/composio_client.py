@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-from typing import Any
 
 COMPOSIO_API_BASE = "https://backend.composio.dev/api/v3.1"
 DEFAULT_SESSION_CONFIG_ID = "sc_bwsfGt3WWy_s"
