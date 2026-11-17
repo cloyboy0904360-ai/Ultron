@@ -5,9 +5,9 @@ it does not contact prospects, spend money, or claim that revenue exists.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 
 @dataclass(frozen=True)
@@ -193,16 +193,20 @@ def render_report(opportunities: Iterable[Opportunity] = OPPORTUNITIES) -> str:
         [
             "## Scoring method",
             "",
-            "Weighted score out of 100: potential contract value 30%, speed to first payment 25%, "
-            "zero-upfront feasibility 20%, demand evidence 15%, delivery feasibility 10%. "
-            "Each dimension is scored 0–5. Scores are internal prioritisation judgements, "
-            "not measured market statistics.",
+            (
+                "Weighted score out of 100: potential contract value 30%, speed to first payment 25%, "
+                "zero-upfront feasibility 20%, demand evidence 15%, delivery feasibility 10%. "
+                "Each dimension is scored 0–5. Scores are internal prioritisation judgements, "
+                "not measured market statistics."
+            ),
             "",
             "## Execution gate",
             "",
-            "Do not build a customer-facing system or contact prospects based on this report alone. "
-            "First verify a real buyer problem, secure explicit interest, agree a paid scope, "
-            "confirm delivery costs and obtain approval. Count revenue only after payment is settled.",
+            (
+                "Do not build a customer-facing system or contact prospects based on this report alone. "
+                "First verify a real buyer problem, secure explicit interest, agree a paid scope, "
+                "confirm delivery costs and obtain approval. Count revenue only after payment is settled."
+            ),
             "",
             "No external contact, spending, account changes or deployment is performed by this module.",
             "",
