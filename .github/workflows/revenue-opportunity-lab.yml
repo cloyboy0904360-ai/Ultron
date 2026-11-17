@@ -1,0 +1,44 @@
+name: Revenue Opportunity Lab
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 8 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: revenue-opportunity-lab
+  cancel-in-progress: false
+
+jobs:
+  rank-opportunities:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Run focused tests
+        run: python -m pytest -q tests/test_revenue_opportunities.py
+
+      - name: Generate opportunity report
+        run: python scripts/run_revenue_opportunities.py --output reports/revenue-opportunities.md
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: revenue-opportunity-report
+          path: reports/revenue-opportunities.md
+          if-no-files-found: error
+          retention-days: 14
