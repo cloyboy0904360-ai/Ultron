@@ -1,0 +1,34 @@
+name: ULTRON Market Intelligence
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run collector
+        run: python scripts/run_market_intelligence.py --output market_intelligence_log.md
+
+      - name: Upload intelligence report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultron-market-intelligence-${{ github.run_id }}
+          path: market_intelligence_log.md
+          if-no-files-found: warn
+          retention-days: 14
