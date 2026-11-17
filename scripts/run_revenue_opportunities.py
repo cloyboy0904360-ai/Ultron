@@ -2,6 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import sys
+from pathlib import Path
+
+# Support direct execution from a checkout without requiring installation.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from ultron.revenue_opportunities import write_report
 

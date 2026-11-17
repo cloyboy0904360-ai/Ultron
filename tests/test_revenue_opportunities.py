@@ -66,7 +66,7 @@ def test_reversed_price_range_is_rejected():
 def test_report_labels_prices_as_hypotheses_and_revenue_as_unverified():
     report = render_report()
     assert "not proof of customer demand or revenue" in report
-    assert "Prices below are hypotheses" in report
+    assert "prices below are hypotheses" in report
     assert "£750–£2,500" in report
     assert "No external contact" in report
 
