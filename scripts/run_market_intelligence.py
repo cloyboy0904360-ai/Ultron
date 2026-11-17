@@ -3,6 +3,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from pathlib import Path
+
+# When executed as a script, Python puts scripts/ (not the repository root)
+# on sys.path. Add the repository root so the ultron package is importable.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from ultron.market_intelligence import (
     analyze_with_rules,
