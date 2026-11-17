@@ -1,13 +1,13 @@
 """Evidence-first technology and market signal collection for ULTRON."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import xml.etree.ElementTree as ET
+from datetime import UTC, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-import xml.etree.ElementTree as ET
 
 USER_AGENT = "ULTRON-Market-Intelligence/1.0 (+https://github.com/cloyboy0904360-ai/Ultron)"
 DEFAULT_SOURCES = {
@@ -113,7 +113,7 @@ def fetch_industry_signals(
         except (RuntimeError, ET.ParseError, ValueError) as exc:
             errors[source] = str(exc)
     return {
-        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "fetched_at": datetime.now(UTC).isoformat(),
         "signals": signals, "source_errors": errors,
         "sources_checked": len(selected),
     }
@@ -139,7 +139,7 @@ def analyze_with_rules(raw_data: dict[str, Any]) -> list[dict[str, Any]]:
             "url": signal.get("url", ""),
             "matched_terms": matches,
             "analysis_mode": "transparent_keyword_rules",
-            "timestamp": raw_data.get("fetched_at", datetime.now(timezone.utc).isoformat()),
+            "timestamp": raw_data.get("fetched_at", datetime.now(UTC).isoformat()),
         })
     return insights
 
