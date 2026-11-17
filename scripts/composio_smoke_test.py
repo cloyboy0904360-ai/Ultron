@@ -50,7 +50,7 @@ def main() -> int:
             f"{session.session_id}"
         )
         return 0
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - CLI boundary reports provider failures cleanly.
         print(f"Composio smoke test FAILED: {exc}", file=sys.stderr)
         return 1
 
