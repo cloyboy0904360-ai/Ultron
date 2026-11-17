@@ -1,6 +1,9 @@
 name: Revenue Opportunity Lab
 
 on:
+  push:
+    branches:
+      - feature/revenue-opportunity-lab
   workflow_dispatch:
   schedule:
     - cron: "15 8 * * *"
