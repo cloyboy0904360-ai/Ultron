@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from ultron.market_intelligence import (
-    _TrendingParser,
     _parse_rss,
+    _TrendingParser,
     analyze_with_rules,
     fetch_industry_signals,
     publish_report,
