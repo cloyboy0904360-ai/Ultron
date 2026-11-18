@@ -77,3 +77,22 @@ def test_worker_reclaims_stale_lease():
     worker._recover_stale_leases()
     assert queue.issue_status == "ready"
     assert any("Expired FINANCE lease reclaimed" in item["body"] for item in queue._comments)
+
+
+def test_worker_reports_unexpected_exception_and_marks_issue_failed(monkeypatch):
+    import ultron.worker as worker_module
+
+    queue = FakeQueue()
+
+    def explode(*args, **kwargs):
+        raise RuntimeError("unexpected adapter failure")
+
+    monkeypatch.setattr(worker_module, "execute_task", explode)
+    result = AgentWorker("FINANCE", queue).run_once()
+
+    assert result["status"] == "FAILED"
+    assert queue.issue_status == "failed"
+    reports = [item["body"] for item in queue._comments if "failure report" in item["body"]]
+    assert len(reports) == 1
+    assert '"error_type": "RuntimeError"' in reports[0]
+    assert "unexpected adapter failure" in reports[0]
