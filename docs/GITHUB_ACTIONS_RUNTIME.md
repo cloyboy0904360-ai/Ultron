@@ -16,9 +16,23 @@ Each job runs one bounded task and exits. This is event-driven/scheduled executi
 
 No paid AI inference is included. Initial handlers are deterministic, role-scoped operations: plans, code review checklists, draft-only sales replies/listings, fulfilment readiness checks, and margin calculations. They are not general-purpose language-model agents until an approved model provider is connected.
 
+## Live command interface
+
+The GitHub Actions worker now imports `ultron.commands.parse_command` and parses the issue body before extracting the structured task. Recognised prefix commands, command groups, standard/command mode, and conflict directives are recorded in the worker's evidence comment. An unknown or malformed first prefix fails the task safely; the handler is not called.
+
+The agent label, not the slash command, selects the responsible worker. Exactly one `agent:<name>` label must be present, alongside `status:ready`. The structured `ultron-task` JSON block selects one allowlisted operation for that agent.
+
+**Important execution boundary:** slash commands are parsed and recorded as request metadata. The current deterministic Python handlers do not interpret free-form natural language, invoke an LLM, or apply style directives to their output. The JSON operation and input are the executable task contract. The free-text description is retained for human context only.
+
 ## Task submission format
 
-Create an issue, apply exactly one agent label (for example agent:finance) plus status:ready, and include this block:
+Create an issue authored by the repository owner, collaborator, or member. Add exactly one agent label and `status:ready`. Start the body with one or more registered slash commands (or omit them for standard mode), add a human-readable description, and include the structured task block.
+
+Example issue body:
+
+```text
+/code /brief Review the margin calculation for arithmetic and validation defects.
+```
 
 ```ultron-task
 {
@@ -31,18 +45,24 @@ Create an issue, apply exactly one agent label (for example agent:finance) plus 
 }
 ```
 
-| Agent | Operation | Effect |
-| --- | --- | --- |
-| NOVA | break_down_objective | Produces a bounded execution plan |
-| FORGE | code_review_checklist | Produces a code/security review checklist |
-| SALES | draft_reply | Produces a draft only; never sends |
-| OPS | fulfilment_readiness | Checks evidence flags; never dispatches |
-| FINANCE | calculate_margin | Calculates GBP margin using integer pence |
-| PIXEL | draft_product_listing | Produces a listing draft; never publishes |
+For this example, apply `agent:finance` and `status:ready`. The worker records the `/code` and `/brief` metadata, then executes only the FINANCE allowlisted `calculate_margin` operation using the JSON values.
+
+## Six-agent operation allowlist
+
+| Agent | Required issue label | Operation | Effect |
+| --- | --- | --- | --- |
+| NOVA | `agent:nova` | `break_down_objective` | Produces a bounded execution plan |
+| FORGE | `agent:forge` | `code_review_checklist` | Produces a code/security review checklist |
+| SALES | `agent:sales` | `draft_reply` | Produces a draft only; never sends |
+| OPS | `agent:ops` | `fulfilment_readiness` | Checks evidence flags; never dispatches |
+| FINANCE | `agent:finance` | `calculate_margin` | Calculates GBP margin using integer pence |
+| PIXEL | `agent:pixel` | `draft_product_listing` | Produces a listing draft; never publishes |
+
+Agent labels are the routing authority. The operation allowlist in `ultron.agents` is the execution authority. A slash command cannot change either boundary.
 
 ## Queue lifecycle
 
-READY -> RUNNING -> VERIFIED. Missing evidence moves a task to BLOCKED; exceptions move it to FAILED. Workers record a lease, attempt number, result/failure JSON, and timestamps in issue comments. A lease older than 30 minutes with no result is requeued. Each worker processes at most one issue per run.
+READY -> RUNNING -> VERIFIED. Missing evidence moves a task to BLOCKED; exceptions move it to FAILED. Workers record a lease, attempt number, result/failure JSON, command metadata, and timestamps in issue comments. A lease older than 30 minutes with no result is requeued. Each worker processes at most one issue per run.
 
 Each agent has a concurrency group so its own jobs do not overlap. Different agents can execute concurrently. Operations are allowlisted and side-effect-free. GitHub Issues does not provide a transactional lease primitive, so no external payment, order, message, shipment, or irreversible operation is allowed in this first runtime.
 
