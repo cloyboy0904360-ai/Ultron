@@ -11,3 +11,27 @@ def test_issue_queue_ignores_untrusted_authors_and_pull_requests():
     ]
     issues = queue.list_issues("FINANCE", "ready")
     assert [issue["number"] for issue in issues] == [1, 4]
+
+
+def test_issue_queue_rejects_issues_with_multiple_agent_labels():
+    queue = GitHubQueue("token", "owner/repo")
+    queue._request = lambda method, path: [
+        {
+            "number": 10,
+            "author_association": "OWNER",
+            "labels": [{"name": "agent:finance"}, {"name": "status:ready"}],
+        },
+        {
+            "number": 11,
+            "author_association": "OWNER",
+            "labels": [
+                {"name": "agent:finance"},
+                {"name": "agent:sales"},
+                {"name": "status:ready"},
+            ],
+        },
+    ]
+
+    issues = queue.list_issues("FINANCE", "ready")
+
+    assert [issue["number"] for issue in issues] == [10]
