@@ -52,7 +52,7 @@ def test_worker_parses_command_prefix_and_records_command_evidence():
     evidence = next(item["body"] for item in queue._comments if "ULTRON_RESULT" in item["body"])
     assert '"commands":["code"]' in evidence
     assert '"mode":"command"' in evidence
-    assert '"gross_profit_pence":550' in evidence
+    assert '"gross_profit_pence": 550' in evidence
 
 
 def test_worker_rejects_unknown_command_prefix_before_execution():
