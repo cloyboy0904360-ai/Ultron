@@ -1,11 +1,26 @@
 # ULTRON Command System 2.0 — Phase 1
 
 **Version:** 2.0  
-**Implementation scope:** Command registry, prefix parser, conflict directives, and standard-mode selection.
+**Implementation scope:** Command registry, prefix parser, conflict directives, standard-mode selection, and integration with the GitHub Issues worker.
 
-## Scope boundary
+## Runtime connection
 
-Phase 1 provides deterministic parsing only. It does not execute user tasks, route work to agents, call external services, enforce account permissions, or authorise transactions. Those responsibilities belong to later execution and agent-routing layers. A parsed command is an instruction hint, never an approval token.
+The GitHub Actions worker imports `parse_command` from `ultron.commands` before parsing the structured task block. Recognised commands and conflict metadata are included in the worker's evidence comment. Unknown or malformed first prefixes fail closed before an agent handler is invoked.
+
+The live execution path is:
+
+1. An authorised GitHub issue is created or labelled.
+2. The issue body is parsed for zero or more registered prefix commands.
+3. The worker extracts the fenced `ultron-task` JSON block.
+4. The single `agent:<name>` issue label selects one of NOVA, FORGE, SALES, OPS, FINANCE, or PIXEL.
+5. The agent's operation allowlist validates and executes the task.
+6. The worker records command metadata, result evidence, and the lifecycle status in issue comments/labels.
+
+The slash command does not select or override the agent. The issue must have exactly one agent label and `status:ready`. The operation must be in that agent's allowlist.
+
+## Important capability boundary
+
+This is a live GitHub Issues + GitHub Actions command interface, not a connection to ChatGPT's internal conversation runtime. The current six handlers are deterministic Python operations. They do not call an LLM or interpret the natural-language description. Slash commands are parsed and recorded as metadata; the fenced JSON operation and input are the executable contract. A model provider and credentials have not been connected.
 
 ## Python interface
 
@@ -78,7 +93,18 @@ The parser exposes this order; an execution host must enforce it.
 
 The command parser never grants permission. In particular, `/ceo`, `/expert`, and any other command cannot authorise spending, transfers, purchases, account changes, credential access, external communications, publishing, customer transactions, fulfilment, dispatch, or destructive actions.
 
-The caller must separately apply the ULTRON approval policy, validate dependencies, route the task to an authorised agent, execute only permitted actions, and verify the resulting evidence.
+The GitHub worker separately enforces the agent operation allowlist. Existing handler limits remain unchanged: SALES only drafts and never sends; PIXEL only prepares listings and never publishes; OPS checks evidence and never dispatches; FINANCE calculates and reconciles only; FORGE prepares technical review material and does not merge/deploy; NOVA creates bounded plans and cannot approve restricted actions.
+
+## Issue submission
+
+See `docs/GITHUB_ACTIONS_RUNTIME.md` for the live issue format. Every executable issue requires:
+- One authorised issue author (owner, collaborator, or member).
+- Exactly one `agent:<name>` label.
+- The `status:ready` label.
+- A valid `ultron-task` JSON block with exactly `operation` and `input`.
+- An operation allowlisted for the selected agent.
+
+A slash command prefix is optional. When supplied, it is parsed and captured in the evidence record.
 
 ## Verification
 
@@ -90,6 +116,6 @@ pytest -q
 python scripts/validate_repository.py
 ```
 
-The command-parser tests cover standard mode, single and combined commands, case handling, duplicate removal, all six documented conflicts, unknown and malformed prefixes, non-string input, registry completeness, and slash text inside ordinary task content.
+The command-parser tests cover standard mode, single and combined commands, case handling, duplicate removal, all six documented conflicts, unknown and malformed prefixes, non-string input, registry completeness, and slash text inside ordinary task content. Worker integration tests cover command evidence capture and safe rejection of unknown prefixes.
 
-Passing Phase 1 tests establishes parser behavior only. It does not establish agent routing, approval enforcement, production execution, or autonomous operation.
+Passing CI establishes the tested repository behaviour only. It does not establish a ChatGPT internal runtime connection, LLM-powered agents, production commerce execution, or continuous always-on operation.
