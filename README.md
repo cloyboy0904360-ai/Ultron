@@ -36,3 +36,4 @@ python scripts/validate_repository.py
 - `docs/AGENT_NETWORK.md`
 - `docs/CORE_RELEASE_GATE.md`
 - `docs/GITHUB_ACTIONS_RUNTIME.md`
+- `docs/COMMAND_SYSTEM.md`
