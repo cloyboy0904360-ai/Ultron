@@ -13,6 +13,7 @@ from typing import Any
 class GitHubAPIError(RuntimeError):
     pass
 
+
 class GitHubQueue:
     def __init__(self, token: str, repository: str, api_url: str = "https://api.github.com"):
         if not token or "/" not in repository:
@@ -64,10 +65,20 @@ class GitHubQueue:
         labels = urllib.parse.quote(f"agent:{agent.lower()},status:{status.lower()}", safe=",")
         issues = self._request("GET", f"/issues?state=open&labels={labels}&per_page=100")
         trusted = {"OWNER", "COLLABORATOR", "MEMBER"}
-        return [
-            item for item in issues
-            if "pull_request" not in item and item.get("author_association") in trusted
-        ]
+        eligible = []
+        for item in issues:
+            if "pull_request" in item or item.get("author_association") not in trusted:
+                continue
+            issue_labels = [
+                label.get("name", "")
+                for label in item.get("labels", [])
+                if isinstance(label, dict)
+            ]
+            agent_labels = [name for name in issue_labels if name.startswith("agent:")]
+            if len(agent_labels) != 1 or agent_labels[0] != f"agent:{agent.lower()}":
+                continue
+            eligible.append(item)
+        return eligible
 
     def comments(self, issue_number: int) -> list[dict[str, Any]]:
         return self._request("GET", f"/issues/{issue_number}/comments?per_page=100")
