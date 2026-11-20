@@ -10,6 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ultron.agents import execute_task
+from ultron.commands import parse_command
 from ultron.github_queue import GitHubAPIError, GitHubQueue
 
 FENCE = chr(96) * 3
@@ -17,8 +18,10 @@ TASK_BLOCK = re.compile(re.escape(FENCE + "ultron-task") + r"\s*(\{.*?\})\s*" + 
 MAX_ATTEMPTS = 3
 STALE_LEASE_MINUTES = 30
 
+
 def utc_now() -> datetime:
     return datetime.now(tz=UTC)
+
 
 def parse_task(body: str) -> tuple[str, dict[str, Any]]:
     match = TASK_BLOCK.search(body or "")
@@ -34,6 +37,7 @@ def parse_task(body: str) -> tuple[str, dict[str, Any]]:
         raise TypeError("operation must be a string and input must be an object")
     return task["operation"], task["input"]
 
+
 def _marker(comment: dict[str, Any], prefix: str) -> dict[str, Any] | None:
     for line in comment.get("body", "").splitlines():
         if line.startswith(prefix):
@@ -45,6 +49,7 @@ def _marker(comment: dict[str, Any], prefix: str) -> dict[str, Any] | None:
             except json.JSONDecodeError:
                 return None
     return None
+
 
 class AgentWorker:
     def __init__(self, agent: str, queue: GitHubQueue):
@@ -96,10 +101,19 @@ class AgentWorker:
             f"<!-- ULTRON_ATTEMPT {attempt} -->\n<!-- ULTRON_LEASE {json.dumps(lease, separators=(',', ':'))} -->\nULTRON {self.agent} acquired this task. Run: {run_id}.")
 
         try:
-            operation, task_input = parse_task(issue.get("body", ""))
+            command = parse_command(issue.get("body", ""))
+            operation, task_input = parse_task(command.task)
             result = execute_task(self.agent, operation, task_input)
+            command_evidence = {
+                "commands": list(command.commands),
+                "command_groups": list(command.command_groups),
+                "mode": command.mode,
+                "conflict_resolutions": list(command.conflict_resolutions),
+                "conflict_directives": list(command.conflict_directives),
+            }
             evidence = {
                 "agent": self.agent, "issue": number, "run_id": run_id, "attempt": attempt,
+                "command": command_evidence,
                 "operation": result.operation, "status": result.status, "output": result.output,
                 "completed_at": utc_now().isoformat(),
             }
@@ -107,6 +121,7 @@ class AgentWorker:
             if len(encoded) > 6000:
                 raise ValueError("task output exceeds the 6000-character evidence limit")
             self.queue.add_comment(number,
+                f"<!-- ULTRON_COMMAND {json.dumps(command_evidence, separators=(',', ':'))} -->\n"
                 f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': result.status})} -->\n"
                 f"**ULTRON {self.agent} evidence**\n\n{FENCE}json\n{json.dumps(evidence, ensure_ascii=False, indent=2)}\n{FENCE}")
             self.queue.set_status(issue, "verified" if result.status == "COMPLETED" else "blocked")
@@ -123,6 +138,7 @@ class AgentWorker:
             self.queue.set_status(issue, "failed")
             return {"agent": self.agent, "status": "FAILED", "issue": number, "run_id": run_id}
 
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--agent", required=True)
@@ -134,6 +150,7 @@ def main() -> int:
     except (GitHubAPIError, ValueError, TypeError, PermissionError) as exc:
         print(json.dumps({"agent": args.agent.upper(), "status": "FAILED", "error": str(exc)[:1000]}))
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())
