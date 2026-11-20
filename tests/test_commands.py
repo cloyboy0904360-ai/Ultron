@@ -1,4 +1,5 @@
 import pytest
+
 from ultron.commands import (
     COMMAND_GROUPS,
     UnknownCommandError,
