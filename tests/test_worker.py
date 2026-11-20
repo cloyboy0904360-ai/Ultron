@@ -41,6 +41,32 @@ def test_parse_task_rejects_extra_fields():
         parse_task(FENCE + "ultron-task\n" + '{"operation":"x","input":{},"unsafe":true}' + "\n" + FENCE)
 
 
+def test_worker_parses_command_prefix_and_records_command_evidence():
+    queue = FakeQueue()
+    task_block = queue.issue["body"]
+    queue.issue["body"] = "/code\nReview the calculation implementation.\n\n" + task_block
+
+    result = AgentWorker("FINANCE", queue).run_once()
+
+    assert result["status"] == "COMPLETED"
+    evidence = next(item["body"] for item in queue._comments if "ULTRON_RESULT" in item["body"])
+    assert '"commands":["code"]' in evidence
+    assert '"mode":"command"' in evidence
+    assert '"gross_profit_pence":550' in evidence
+
+
+def test_worker_rejects_unknown_command_prefix_before_execution():
+    queue = FakeQueue()
+    queue.issue["body"] = "/not-a-command\n" + queue.issue["body"]
+
+    result = AgentWorker("FINANCE", queue).run_once()
+
+    assert result["status"] == "FAILED"
+    assert queue.issue_status == "failed"
+    failure = next(item["body"] for item in queue._comments if "failure report" in item["body"])
+    assert "unknown command: /not-a-command" in failure
+
+
 def test_worker_records_evidence_and_marks_verified():
     queue = FakeQueue()
     result = AgentWorker("FINANCE", queue).run_once()
