@@ -35,7 +35,7 @@ class SourceDefinition:
             raise ValueError("source name must not be empty")
         if self.kind not in {"product_rss", "demand_rss", "supplier_json"}:
             raise ValueError("unsupported source kind")
-        parsed = urllib.parse.urlparse(self.url)
+        parsed = urllib.parse.urllib.parse.urlparse(self.url)
         if parsed.scheme != "https" or not parsed.hostname:
             raise ValueError("source URL must use HTTPS")
         hosts = tuple(host.lower().rstrip(".") for host in self.allowed_hosts)
@@ -81,7 +81,7 @@ def fetch_https(
     max_bytes: int = MAX_RESPONSE_BYTES,
 ) -> tuple[bytes, str]:
     """Fetch a bounded HTTPS response from one allowlisted host without redirects."""
-    parsed = urlparse(url)
+    parsed = urllib.parse.urlparse(url)
     if parsed.scheme != "https" or not parsed.hostname:
         raise ValueError("only HTTPS source URLs are allowed")
     if parsed.hostname.lower().rstrip(".") not in {
@@ -108,7 +108,7 @@ def fetch_https(
 
 
 def _safe_record_url(value: str, source: SourceDefinition) -> str:
-    parsed = urlparse(value)
+    parsed = urllib.parse.urlparse(value)
     allowed = {host.lower().rstrip(".") for host in source.allowed_hosts}
     if parsed.scheme != "https" or not parsed.hostname:
         raise ValueError("feed record URL must use HTTPS")
