@@ -61,7 +61,7 @@ class FeedRecord:
     supplier_evidence: dict[str, object] | None = None
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class SourceCollection:
     fetched_at: str
     records: tuple[FeedRecord, ...]
