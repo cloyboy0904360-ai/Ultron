@@ -106,7 +106,7 @@ def test_profitability_rejects_below_margin_threshold():
 
 
 def test_profitability_rejects_float_or_negative_money():
-    with pytest.raises(ValueError, match="non-negative integer pence"):
+    with pytest.raises(ValueError, match="positive integer pence"):
         calculate_profitability(
             selling_price_pence=1000.0,
             supplier_cost_pence=100,
