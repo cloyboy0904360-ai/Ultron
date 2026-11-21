@@ -6,14 +6,14 @@ not proof of stock, demand, product authenticity or commercial availability.
 """
 from __future__ import annotations
 
+import dataclasses
+import datetime
 import json
 import re
+import urllib.error
+import urllib.parse
+import urllib.request
 import xml.etree.ElementTree as ET
-from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
-from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
-from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
 USER_AGENT = "ULTRON-ReadOnly-Commerce-Research/1.0"
@@ -21,7 +21,7 @@ MAX_RESPONSE_BYTES = 1_000_000
 DEFAULT_TIMEOUT_SECONDS = 12.0
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class SourceDefinition:
     name: str
     kind: str
@@ -35,7 +35,7 @@ class SourceDefinition:
             raise ValueError("source name must not be empty")
         if self.kind not in {"product_rss", "demand_rss", "supplier_json"}:
             raise ValueError("unsupported source kind")
-        parsed = urlparse(self.url)
+        parsed = urllib.parse.urlparse(self.url)
         if parsed.scheme != "https" or not parsed.hostname:
             raise ValueError("source URL must use HTTPS")
         hosts = tuple(host.lower().rstrip(".") for host in self.allowed_hosts)
@@ -68,7 +68,7 @@ class SourceCollection:
     sources_succeeded: int
 
 
-class _NoRedirect(HTTPRedirectHandler):
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
 
@@ -90,17 +90,17 @@ def fetch_https(
         raise ValueError("source host is not allowlisted")
     if max_bytes < 1 or timeout <= 0:
         raise ValueError("response limit and timeout must be positive")
-    request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/rss+xml, application/atom+xml, application/json, application/xml"})
-    opener = build_opener(_NoRedirect)
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/rss+xml, application/atom+xml, application/json, application/xml"})
+    opener = urllib.request.build_opener(_NoRedirect)
     try:
         with opener.open(request, timeout=timeout) as response:
             if response.geturl() != url:
                 raise ValueError("redirects are not accepted")
             content_type = response.headers.get_content_type()
             body = response.read(max_bytes + 1)
-    except HTTPError as exc:
+    except urllib.error.HTTPError as exc:
         raise RuntimeError(f"HTTP source error: {exc.code}") from exc
-    except (URLError, TimeoutError) as exc:
+    except (urllib.error.URLError, TimeoutError) as exc:
         raise RuntimeError(f"source request failed: {type(exc).__name__}") from exc
     if len(body) > max_bytes:
         raise ValueError("source response exceeded the configured size limit")
@@ -191,10 +191,10 @@ def collect_sources(
     sources: tuple[SourceDefinition, ...] | list[SourceDefinition],
     *,
     fetcher=fetch_https,
-    now: datetime | None = None,
+    now: datetime.datetime | None = None,
 ) -> SourceCollection:
     """Collect configured feeds independently; failures are explicit per source."""
-    checked_at = now or datetime.now(UTC)
+    checked_at = now or datetime.datetime.now(datetime.UTC)
     if checked_at.tzinfo is None or checked_at.utcoffset() is None:
         raise ValueError("now must be timezone-aware")
     fetched_at = checked_at.isoformat()
@@ -229,7 +229,7 @@ def collection_to_dict(result: SourceCollection) -> dict:
     """Return JSON-ready records with explicit evidence limitations."""
     return {
         "fetched_at": result.fetched_at,
-        "records": [asdict(record) for record in result.records],
+        "records": [dataclasses.asdict(record) for record in result.records],
         "source_errors": result.source_errors,
         "sources_configured": result.sources_configured,
         "sources_succeeded": result.sources_succeeded,
