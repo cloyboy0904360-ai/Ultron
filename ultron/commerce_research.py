@@ -119,6 +119,10 @@ class SupplierVerification:
     delivery_days_min: int | None
     delivery_days_max: int | None
     evidence_url: str | None
+    stock_checked_at: str | None
+    evidence_checked_at: str | None
+    evidence_excerpt: str | None
+    returns_policy_url: str | None
 
 
 def verify_supplier_offer(
@@ -134,7 +138,11 @@ def verify_supplier_offer(
     missing: list[str] = []
     if offer.stock_status != "in_stock":
         missing.append("stock_status")
-    if offer.stock_checked_at is None or checked_at - offer.stock_checked_at > max_age:
+    if (
+        offer.stock_checked_at is None
+        or offer.stock_checked_at > checked_at
+        or checked_at - offer.stock_checked_at > max_age
+    ):
         missing.append("stock_checked_at")
     if offer.unit_cost_pence is None:
         missing.append("unit_cost_pence")
@@ -148,7 +156,11 @@ def verify_supplier_offer(
         missing.append("returns_policy_url")
     if not offer.evidence_url or not offer.evidence_excerpt:
         missing.append("source_evidence")
-    if offer.evidence_checked_at is None or checked_at - offer.evidence_checked_at > max_age:
+    if (
+        offer.evidence_checked_at is None
+        or offer.evidence_checked_at > checked_at
+        or checked_at - offer.evidence_checked_at > max_age
+    ):
         missing.append("evidence_checked_at")
     return SupplierVerification(
         status="VERIFIED" if not missing else "BLOCKED",
@@ -160,6 +172,10 @@ def verify_supplier_offer(
         delivery_days_min=offer.delivery_days_min,
         delivery_days_max=offer.delivery_days_max,
         evidence_url=offer.evidence_url,
+        stock_checked_at=offer.stock_checked_at.isoformat() if offer.stock_checked_at else None,
+        evidence_checked_at=offer.evidence_checked_at.isoformat() if offer.evidence_checked_at else None,
+        evidence_excerpt=offer.evidence_excerpt,
+        returns_policy_url=offer.returns_policy_url,
     )
 
 
@@ -239,6 +255,9 @@ class ProductAssessment:
     status: str
     missing_evidence: tuple[str, ...]
     research_evidence_urls: tuple[str, ...]
+    product_source_url: str
+    observed_price_pence: int
+    demand_evidence_checked_at: str
     supplier_evidence_url: str | None
     net_contribution_pence: int | None
     net_contribution_margin_percent: float | None
@@ -260,7 +279,10 @@ def assess_product(
     missing: list[str] = []
     if not candidate.demand_evidence_urls:
         missing.append("demand_evidence")
-    if checked_at - candidate.demand_evidence_checked_at > demand_max_age:
+    if (
+        candidate.demand_evidence_checked_at > checked_at
+        or checked_at - candidate.demand_evidence_checked_at > demand_max_age
+    ):
         missing.append("demand_evidence")
     if supplier.status != "VERIFIED":
         missing.extend(f"supplier:{item}" for item in supplier.missing_evidence)
@@ -271,6 +293,9 @@ def assess_product(
         status="READY_FOR_LISTING_REVIEW" if not missing else "BLOCKED",
         missing_evidence=tuple(missing),
         research_evidence_urls=candidate.demand_evidence_urls,
+        product_source_url=candidate.source_url,
+        observed_price_pence=candidate.observed_price_pence,
+        demand_evidence_checked_at=candidate.demand_evidence_checked_at.isoformat(),
         supplier_evidence_url=supplier.evidence_url,
         net_contribution_pence=profitability.net_contribution_pence,
         net_contribution_margin_percent=profitability.net_contribution_margin_percent,
