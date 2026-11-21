@@ -133,8 +133,21 @@ class AgentWorker:
                 "failed_at": utc_now().isoformat(),
             }
             self.queue.add_comment(number,
-                f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': 'FAILED'})} -->\n"
-                f"**ULTRON {self.agent} failure report**\n\n{FENCE}json\n{json.dumps(failure, indent=2)}\n{FENCE}")
+                f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': 'FAILED'})} -->\\n"
+                f"**ULTRON {self.agent} failure report**\\n\\n{FENCE}json\\n{json.dumps(failure, indent=2)}\\n{FENCE}")
+            self.queue.set_status(issue, "failed")
+            return {"agent": self.agent, "status": "FAILED", "issue": number, "run_id": run_id}
+        except Exception as exc:
+            # Public issue comments must not expose arbitrary exception messages.
+            failure = {
+                "agent": self.agent, "issue": number, "run_id": run_id, "attempt": attempt,
+                "status": "FAILED", "error_type": type(exc).__name__,
+                "error": "Unexpected execution failure; raw diagnostic details withheld.",
+                "failed_at": utc_now().isoformat(),
+            }
+            self.queue.add_comment(number,
+                f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': 'FAILED'})} -->\\n"
+                f"**ULTRON {self.agent} failure report**\\n\\n{FENCE}json\\n{json.dumps(failure, indent=2)}\\n{FENCE}")
             self.queue.set_status(issue, "failed")
             return {"agent": self.agent, "status": "FAILED", "issue": number, "run_id": run_id}
 

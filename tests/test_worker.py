@@ -103,3 +103,21 @@ def test_worker_reclaims_stale_lease():
     worker._recover_stale_leases()
     assert queue.issue_status == "ready"
     assert any("Expired FINANCE lease reclaimed" in item["body"] for item in queue._comments)
+
+
+def test_worker_records_unexpected_exception_as_failed(monkeypatch):
+    import ultron.worker as worker_module
+
+    queue = FakeQueue()
+
+    def explode(*args, **kwargs):
+        raise RuntimeError("unexpected handler failure")
+
+    monkeypatch.setattr(worker_module, "execute_task", explode)
+    result = AgentWorker("FINANCE", queue).run_once()
+
+    assert result["status"] == "FAILED"
+    assert queue.issue_status == "failed"
+    failure = next(item["body"] for item in queue._comments if "failure report" in item["body"])
+    assert '"error_type": "RuntimeError"' in failure
+    assert '"status": "FAILED"' in failure
