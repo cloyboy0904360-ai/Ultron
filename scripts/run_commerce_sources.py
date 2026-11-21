@@ -18,7 +18,7 @@ def load_sources(path: str | Path) -> tuple[SourceDefinition, ...]:
         raise ValueError("source config must be a version 1 JSON object")
     items = config.get("sources")
     if not isinstance(items, list):
-        raise ValueError("source config must contain a sources array")
+        raise TypeError("source config must contain a sources array")
     return tuple(SourceDefinition(**item) for item in items)
 
 
