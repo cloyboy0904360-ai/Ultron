@@ -126,13 +126,23 @@ class AgentWorker:
                 f"**ULTRON {self.agent} evidence**\n\n{FENCE}json\n{json.dumps(evidence, ensure_ascii=False, indent=2)}\n{FENCE}")
             self.queue.set_status(issue, "verified" if result.status == "COMPLETED" else "blocked")
             return {"agent": self.agent, "status": result.status, "issue": number, "run_id": run_id}
+        except (ValueError, TypeError, PermissionError, GitHubAPIError) as exc:
+            failure = {
+                "agent": self.agent, "issue": number, "run_id": run_id, "attempt": attempt,
+                "status": "FAILED", "error_type": type(exc).__name__, "error": str(exc)[:1000],
+                "failed_at": utc_now().isoformat(),
+            }
+            self.queue.add_comment(number,
+                f"<!-- ULTRON_RESULT {json.dumps({'run_id': run_id, 'status': 'FAILED'})} -->\\n"
+                f"**ULTRON {self.agent} failure report**\\n\\n{FENCE}json\\n{json.dumps(failure, indent=2)}\\n{FENCE}")
+            self.queue.set_status(issue, "failed")
+            return {"agent": self.agent, "status": "FAILED", "issue": number, "run_id": run_id}
         except Exception as exc:
-            # Issue comments are public in public repositories. Never copy raw exception
-            # messages into the evidence ledger because they may contain secrets or PII.
+            # Public issue comments must not expose arbitrary exception messages.
             failure = {
                 "agent": self.agent, "issue": number, "run_id": run_id, "attempt": attempt,
                 "status": "FAILED", "error_type": type(exc).__name__,
-                "error": "Execution failed; raw diagnostic details withheld from public evidence.",
+                "error": "Unexpected execution failure; raw diagnostic details withheld.",
                 "failed_at": utc_now().isoformat(),
             }
             self.queue.add_comment(number,
