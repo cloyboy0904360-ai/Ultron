@@ -6,6 +6,8 @@ not proof of stock, demand, product authenticity or commercial availability.
 """
 from __future__ import annotations
 
+# ruff: noqa: I001
+
 import dataclasses
 import datetime
 import json
@@ -47,7 +49,7 @@ class SourceDefinition:
             raise ValueError("max_records must be between 1 and 100")
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class FeedRecord:
     source_name: str
     source_kind: str
