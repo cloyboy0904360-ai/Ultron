@@ -1,9 +1,7 @@
+import pytest
 from datetime import UTC, datetime
 
-import pytest
-
 from ultron.agents import AGENT_OPERATIONS, execute_task
-
 
 NOW = datetime(2026, 11, 21, 12, 0, tzinfo=UTC).isoformat()
 
