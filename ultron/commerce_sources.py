@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 import re
 import xml.etree.ElementTree as ET
-from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from urllib.error import HTTPError, URLError
@@ -191,7 +190,7 @@ def _parse_supplier_json(body: bytes, source: SourceDefinition, fetched_at: str)
 def collect_sources(
     sources: tuple[SourceDefinition, ...] | list[SourceDefinition],
     *,
-    fetcher: Callable[..., tuple[bytes, str]] = fetch_https,
+    fetcher=fetch_https,
     now: datetime | None = None,
 ) -> SourceCollection:
     """Collect configured feeds independently; failures are explicit per source."""
