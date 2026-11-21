@@ -9,9 +9,9 @@ from __future__ import annotations
 import json
 import re
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-from typing import Callable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -152,7 +152,7 @@ def _parse_supplier_json(body: bytes, source: SourceDefinition, fetched_at: str)
     payload = json.loads(body.decode("utf-8"))
     items = payload.get("offers") if isinstance(payload, dict) else None
     if not isinstance(items, list):
-        raise ValueError("supplier JSON must contain an offers array")
+        raise TypeError("supplier JSON must contain an offers array")
     records: list[FeedRecord] = []
     for item in items[:source.max_records]:
         if not isinstance(item, dict):
