@@ -54,7 +54,7 @@ class ProductCandidate:
         if type(self.observed_price_pence) is not int or self.observed_price_pence <= 0:
             raise ValueError("observed_price_pence must be a positive integer pence value")
         if not isinstance(self.demand_evidence_urls, tuple):
-            raise ValueError("demand_evidence_urls must be a tuple of HTTPS URLs")
+            raise TypeError("demand_evidence_urls must be a tuple of HTTPS URLs")
         for url in self.demand_evidence_urls:
             _https_url(url, "demand_evidence_url")
         _aware_datetime(self.demand_evidence_checked_at, "demand_evidence_checked_at")
