@@ -12,7 +12,7 @@ from ultron.commerce_research import (
     verify_supplier_offer,
 )
 
-NOW = datetime(2026, 11, 21, 12, 0, tzinfo=UTC)
+NOW = datetime.now(UTC)
 
 
 def candidate() -> ProductCandidate:
@@ -51,6 +51,9 @@ def test_supplier_offer_is_verified_only_with_complete_fresh_evidence():
     assert result.status == "VERIFIED"
     assert result.unit_cost_pence == 4200
     assert result.shipping_cost_pence == 500
+    assert result.stock_checked_at == NOW.isoformat()
+    assert result.evidence_url == "https://supplier.example/dehumidifier"
+    assert "In stock" in result.evidence_excerpt
 
 
 def test_supplier_offer_with_unknown_stock_is_blocked():
@@ -70,6 +73,18 @@ def test_supplier_offer_with_stale_stock_check_is_blocked():
     )
     assert result.status == "BLOCKED"
     assert "stock_checked_at" in result.missing_evidence
+
+
+
+def test_supplier_offer_with_future_stock_check_is_blocked():
+    future = NOW + timedelta(minutes=1)
+    result = verify_supplier_offer(
+        supplier_offer(stock_checked_at=future, evidence_checked_at=future),
+        now=NOW,
+    )
+    assert result.status == "BLOCKED"
+    assert "stock_checked_at" in result.missing_evidence
+    assert "evidence_checked_at" in result.missing_evidence
 
 
 def test_supplier_offer_rejects_non_https_evidence_urls():
@@ -144,6 +159,8 @@ def test_product_assessment_needs_demand_supplier_and_margin_evidence():
     assert assessment.research_evidence_urls == (
         "https://trends.example/dehumidifiers",
     )
+    assert assessment.product_source_url == "https://retailer.example/products/dehumidifier"
+    assert assessment.publication_allowed is False
 
 
 def test_product_assessment_blocks_when_demand_evidence_is_stale():
