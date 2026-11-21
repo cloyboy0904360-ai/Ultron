@@ -6,12 +6,12 @@ not proof of stock, demand, product authenticity or commercial availability.
 """
 from __future__ import annotations
 
-import json
-import re
-import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+import json
+import re
+import xml.etree.ElementTree as ET
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
