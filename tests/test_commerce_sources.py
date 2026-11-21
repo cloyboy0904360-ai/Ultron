@@ -94,7 +94,7 @@ def test_supplier_json_collection_rejects_non_json_content_type():
 def test_supplier_json_rejects_invalid_price_and_external_record_url():
     invalid_price = json.dumps({"offers": [{
         "title": "Item", "url": "https://feeds.example/item", "price_pence": 12.5
-    }}).encode()
+    }]}).encode()
     result = collect_sources(
         [source(kind="supplier_json")],
         fetcher=fake_fetch(invalid_price, "application/json"),
@@ -104,7 +104,7 @@ def test_supplier_json_rejects_invalid_price_and_external_record_url():
 
     external_url = json.dumps({"offers": [{
         "title": "Item", "url": "https://untrusted.example/item"
-    }}).encode()
+    }]}).encode()
     result = collect_sources(
         [source(kind="supplier_json")],
         fetcher=fake_fetch(external_url, "application/json"),
@@ -151,3 +151,32 @@ def test_collection_rejects_naive_timestamps():
 def test_fetch_https_rejects_host_not_in_allowlist_before_network():
     with pytest.raises(ValueError, match="not allowlisted"):
         fetch_https("https://untrusted.example/feed", allowed_hosts=("feeds.example",))
+
+
+def test_supplier_json_retains_offer_evidence_without_claiming_independent_verification():
+    offer = {
+        "title": "Portable dehumidifier",
+        "url": "https://feeds.example/items/dehumidifier",
+        "price_pence": 4200,
+        "stock_status": "in_stock",
+        "stock_checked_at": NOW.isoformat(),
+        "unit_cost_pence": 4200,
+        "shipping_cost_pence": 500,
+        "ships_to_uk": True,
+        "delivery_days_min": 2,
+        "delivery_days_max": 4,
+        "returns_policy_url": "https://feeds.example/returns",
+        "evidence_excerpt": "In stock, UK delivery.",
+        "evidence_checked_at": NOW.isoformat(),
+    }
+    result = collect_sources(
+        [source(kind="supplier_json")],
+        fetcher=fake_fetch(json.dumps({"offers": [offer]}).encode(), "application/json"),
+        now=NOW,
+    )
+    assert result.sources_succeeded == 1
+    record = result.records[0]
+    assert record.supplier_evidence["stock_status"] == "in_stock"
+    assert record.supplier_evidence["unit_cost_pence"] == 4200
+    assert record.supplier_evidence["returns_policy_url"] == "https://feeds.example/returns"
+    assert "not independently audited" in record.summary
