@@ -4,7 +4,7 @@ import pytest
 
 from ultron.agents import AGENT_OPERATIONS, execute_task
 
-NOW = datetime(2026, 11, 21, 12, 0, tzinfo=UTC).isoformat()
+NOW = datetime.now(UTC).isoformat()
 
 
 def test_six_agents_have_separate_allowlisted_capabilities():
