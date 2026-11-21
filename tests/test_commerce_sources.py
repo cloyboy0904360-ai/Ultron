@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
-
 import pytest
+from datetime import UTC, datetime
 
 from ultron.commerce_sources import (
     SourceDefinition,
