@@ -1,5 +1,6 @@
-import pytest
 from datetime import UTC, datetime
+
+import pytest
 
 from ultron.agents import AGENT_OPERATIONS, execute_task
 
