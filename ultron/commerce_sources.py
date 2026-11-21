@@ -57,6 +57,7 @@ class FeedRecord:
     summary: str
     observed_at: str
     price_pence: int | None = None
+    supplier_evidence: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -163,21 +164,26 @@ def _parse_supplier_json(body: bytes, source: SourceDefinition, fetched_at: str)
         price = item.get("price_pence")
         if price is not None and (type(price) is not int or price < 0):
             raise ValueError("supplier price_pence must be a non-negative integer")
+        evidence_keys = (
+            "stock_status", "stock_checked_at", "unit_cost_pence",
+            "shipping_cost_pence", "ships_to_uk", "delivery_days_min",
+            "delivery_days_max", "returns_policy_url", "evidence_excerpt",
+            "evidence_checked_at",
+        )
+        evidence = {key: item[key] for key in evidence_keys if key in item}
+        if "returns_policy_url" in evidence:
+            evidence["returns_policy_url"] = _safe_record_url(
+                str(evidence["returns_policy_url"]), source
+            )
         records.append(FeedRecord(
             source_name=source.name,
             source_kind=source.kind,
             title=title.strip()[:300],
             url=_safe_record_url(url, source),
-            summary=json.dumps(
-                {key: item.get(key) for key in (
-                    "stock_status", "ships_to_uk", "delivery_days_min",
-                    "delivery_days_max", "returns_policy_url", "evidence_excerpt",
-                ) if key in item},
-                ensure_ascii=False,
-                sort_keys=True,
-            )[:2000],
+            summary="Supplier-provided structured offer evidence; not independently audited.",
             observed_at=fetched_at,
             price_pence=price,
+            supplier_evidence=evidence,
         ))
     return records
 
