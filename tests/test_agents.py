@@ -1,11 +1,18 @@
+from datetime import UTC, datetime
+
 import pytest
 
 from ultron.agents import AGENT_OPERATIONS, execute_task
 
 
+NOW = datetime(2026, 11, 21, 12, 0, tzinfo=UTC).isoformat()
+
+
 def test_six_agents_have_separate_allowlisted_capabilities():
     assert set(AGENT_OPERATIONS) == {"NOVA", "FORGE", "SALES", "OPS", "FINANCE", "PIXEL"}
-    assert all(len(operations) == 1 for operations in AGENT_OPERATIONS.values())
+    assert "verify_supplier_offer" in AGENT_OPERATIONS["OPS"]
+    assert "calculate_product_profitability" in AGENT_OPERATIONS["FINANCE"]
+    assert "assess_product_candidate" in AGENT_OPERATIONS["PIXEL"]
 
 
 def test_agent_cannot_execute_another_agents_operation():
@@ -27,6 +34,40 @@ def test_finance_rejects_float_currency_values():
         execute_task("FINANCE", "calculate_margin", {
             "revenue_pence": 9.0, "cost_pence": 3, "fees_pence": 1
         })
+
+
+def test_finance_product_profitability_marks_unknown_fees_unverified():
+    result = execute_task("FINANCE", "calculate_product_profitability", {
+        "selling_price_pence": 9000,
+        "supplier_cost_pence": 4000,
+        "supplier_shipping_pence": 500,
+        "marketplace_fee_pence": None,
+        "payment_fee_pence": 200,
+        "other_costs_pence": 0,
+    })
+    assert result.status == "BLOCKED"
+    assert result.output["status"] == "UNVERIFIED"
+    assert result.output["net_contribution_pence"] is None
+
+
+def test_ops_supplier_verification_requires_recent_stock_evidence():
+    result = execute_task("OPS", "verify_supplier_offer", {
+        "supplier_name": "Example UK Supplier",
+        "product_url": "https://supplier.example/item",
+        "stock_status": "in_stock",
+        "stock_checked_at": NOW,
+        "unit_cost_pence": 4000,
+        "shipping_cost_pence": 500,
+        "ships_to_uk": True,
+        "delivery_days_min": 2,
+        "delivery_days_max": 4,
+        "returns_policy_url": "https://supplier.example/returns",
+        "evidence_url": "https://supplier.example/item",
+        "evidence_excerpt": "In stock; £40; UK tracked delivery.",
+        "evidence_checked_at": NOW,
+    })
+    assert result.status == "COMPLETED"
+    assert result.output["status"] == "VERIFIED"
 
 
 def test_sales_output_is_draft_only():
@@ -60,6 +101,45 @@ def test_pixel_listing_is_not_published():
     })
     assert result.output["published"] is False
     assert result.output["publication"] == "DRAFT_ONLY"
+
+
+def test_pixel_product_assessment_never_authorises_publication():
+    result = execute_task("PIXEL", "assess_product_candidate", {
+        "product": {
+            "name": "Compact dehumidifier",
+            "category": "home",
+            "source_url": "https://retailer.example/item",
+            "observed_price_pence": 8999,
+            "demand_evidence_urls": ["https://trends.example/item"],
+            "demand_evidence_checked_at": NOW,
+        },
+        "supplier": {
+            "status": "VERIFIED",
+            "missing_evidence": [],
+            "supplier_name": "Example UK Supplier",
+            "unit_cost_pence": 4200,
+            "shipping_cost_pence": 500,
+            "ships_to_uk": True,
+            "delivery_days_min": 2,
+            "delivery_days_max": 4,
+            "evidence_url": "https://supplier.example/item",
+        },
+        "profitability": {
+            "status": "APPROVED",
+            "selling_price_pence": 8999,
+            "supplier_cost_pence": 4200,
+            "supplier_shipping_pence": 500,
+            "marketplace_fee_pence": 900,
+            "payment_fee_pence": 250,
+            "other_costs_pence": 100,
+            "gross_profit_pence": 4299,
+            "net_contribution_pence": 3049,
+            "net_contribution_margin_percent": 33.88,
+            "missing_costs": [],
+        },
+    })
+    assert result.output["status"] == "READY_FOR_LISTING_REVIEW"
+    assert result.output["publication_allowed"] is False
 
 
 def test_nova_requires_an_objective():
