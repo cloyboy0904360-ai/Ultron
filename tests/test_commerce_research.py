@@ -12,7 +12,6 @@ from ultron.commerce_research import (
     verify_supplier_offer,
 )
 
-
 NOW = datetime(2026, 11, 21, 12, 0, tzinfo=UTC)
 
 
