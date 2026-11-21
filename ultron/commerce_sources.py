@@ -35,7 +35,7 @@ class SourceDefinition:
             raise ValueError("source name must not be empty")
         if self.kind not in {"product_rss", "demand_rss", "supplier_json"}:
             raise ValueError("unsupported source kind")
-        parsed = urllib.parse.urllib.parse.urlparse(self.url)
+        parsed = urllib.parse.urlparse(self.url)
         if parsed.scheme != "https" or not parsed.hostname:
             raise ValueError("source URL must use HTTPS")
         hosts = tuple(host.lower().rstrip(".") for host in self.allowed_hosts)
