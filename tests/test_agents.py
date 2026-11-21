@@ -103,7 +103,7 @@ def test_pixel_listing_is_not_published():
     assert result.output["publication"] == "DRAFT_ONLY"
 
 
-def test_pixel_product_assessment_never_authorises_publication():
+def test_pixel_product_assessment_rechecks_raw_evidence_and_never_publishes():
     result = execute_task("PIXEL", "assess_product_candidate", {
         "product": {
             "name": "Compact dehumidifier",
@@ -113,33 +113,72 @@ def test_pixel_product_assessment_never_authorises_publication():
             "demand_evidence_urls": ["https://trends.example/item"],
             "demand_evidence_checked_at": NOW,
         },
-        "supplier": {
-            "status": "VERIFIED",
-            "missing_evidence": [],
+        "supplier_offer": {
             "supplier_name": "Example UK Supplier",
+            "product_url": "https://supplier.example/item",
+            "stock_status": "in_stock",
+            "stock_checked_at": NOW,
             "unit_cost_pence": 4200,
             "shipping_cost_pence": 500,
             "ships_to_uk": True,
             "delivery_days_min": 2,
             "delivery_days_max": 4,
+            "returns_policy_url": "https://supplier.example/returns",
             "evidence_url": "https://supplier.example/item",
+            "evidence_excerpt": "In stock; £42; UK tracked delivery.",
+            "evidence_checked_at": NOW,
         },
         "profitability": {
-            "status": "APPROVED",
             "selling_price_pence": 8999,
             "supplier_cost_pence": 4200,
             "supplier_shipping_pence": 500,
             "marketplace_fee_pence": 900,
             "payment_fee_pence": 250,
             "other_costs_pence": 100,
-            "gross_profit_pence": 4299,
-            "net_contribution_pence": 3049,
-            "net_contribution_margin_percent": 33.88,
-            "missing_costs": [],
         },
     })
     assert result.output["status"] == "READY_FOR_LISTING_REVIEW"
     assert result.output["publication_allowed"] is False
+    assert result.output["supplier_verification"]["status"] == "VERIFIED"
+
+
+def test_pixel_assessment_does_not_trust_caller_claim_of_supplier_verified():
+    result = execute_task("PIXEL", "assess_product_candidate", {
+        "product": {
+            "name": "Compact dehumidifier",
+            "category": "home",
+            "source_url": "https://retailer.example/item",
+            "observed_price_pence": 8999,
+            "demand_evidence_urls": ["https://trends.example/item"],
+            "demand_evidence_checked_at": NOW,
+        },
+        "supplier_offer": {
+            "supplier_name": "Example UK Supplier",
+            "product_url": "https://supplier.example/item",
+            "stock_status": "unknown",
+            "stock_checked_at": NOW,
+            "unit_cost_pence": 4200,
+            "shipping_cost_pence": 500,
+            "ships_to_uk": True,
+            "delivery_days_min": 2,
+            "delivery_days_max": 4,
+            "returns_policy_url": "https://supplier.example/returns",
+            "evidence_url": "https://supplier.example/item",
+            "evidence_excerpt": "Supplier status not confirmed.",
+            "evidence_checked_at": NOW,
+        },
+        "profitability": {
+            "selling_price_pence": 8999,
+            "supplier_cost_pence": 4200,
+            "supplier_shipping_pence": 500,
+            "marketplace_fee_pence": 900,
+            "payment_fee_pence": 250,
+            "other_costs_pence": 100,
+        },
+    })
+    assert result.status == "BLOCKED"
+    assert result.output["status"] == "BLOCKED"
+    assert "stock_status" in result.output["supplier_verification"]["missing_evidence"]
 
 
 def test_nova_requires_an_objective():
