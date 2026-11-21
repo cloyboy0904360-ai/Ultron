@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-
 import pytest
+from datetime import UTC, datetime, timedelta
 
 from ultron.commerce_research import (
     ProductCandidate,
