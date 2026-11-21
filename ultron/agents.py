@@ -1,17 +1,29 @@
 """Safe, deterministic task handlers for the six ULTRON roles."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from datetime import datetime
 from typing import Any
+
+from ultron.commerce_research import (
+    ProductCandidate,
+    ProfitabilityResult,
+    SupplierOffer,
+    SupplierVerification,
+    assess_product,
+    calculate_profitability,
+    verify_supplier_offer,
+)
 
 AGENT_OPERATIONS: dict[str, frozenset[str]] = {
     "NOVA": frozenset({"break_down_objective"}),
     "FORGE": frozenset({"code_review_checklist"}),
     "SALES": frozenset({"draft_reply"}),
-    "OPS": frozenset({"fulfilment_readiness"}),
-    "FINANCE": frozenset({"calculate_margin"}),
-    "PIXEL": frozenset({"draft_product_listing"}),
+    "OPS": frozenset({"fulfilment_readiness", "verify_supplier_offer"}),
+    "FINANCE": frozenset({"calculate_margin", "calculate_product_profitability"}),
+    "PIXEL": frozenset({"draft_product_listing", "assess_product_candidate"}),
 }
+
 
 @dataclass(frozen=True)
 class TaskResult:
@@ -19,11 +31,13 @@ class TaskResult:
     status: str
     output: dict[str, Any]
 
+
 def _required_text(data: dict[str, Any], key: str) -> str:
     value = data.get(key)
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{key} must be a non-empty string")
     return value.strip()
+
 
 def _text_list(data: dict[str, Any], key: str) -> list[str]:
     value = data.get(key, [])
@@ -31,8 +45,22 @@ def _text_list(data: dict[str, Any], key: str) -> list[str]:
         raise ValueError(f"{key} must be a list of non-empty strings")
     return [x.strip() for x in value]
 
+
+def _datetime_value(value: Any, field: str) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be an ISO-8601 datetime string")
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"{field} must be an ISO-8601 datetime string") from exc
+
+
 def execute_task(agent: str, operation: str, data: dict[str, Any]) -> TaskResult:
-    """Execute one allowlisted, side-effect-free operation for an agent."""
+    """Execute one allowlisted operation; commerce operations are evidence-only."""
     agent = agent.upper()
     if agent not in AGENT_OPERATIONS:
         raise ValueError("unknown agent")
@@ -98,6 +126,46 @@ def execute_task(agent: str, operation: str, data: dict[str, Any]) -> TaskResult
             "gross_margin_percent": round((profit / revenue) * 100, 2) if revenue else None,
             "currency": "GBP",
         }
+    elif operation == "calculate_product_profitability":
+        result = calculate_profitability(**data)
+        output = asdict(result)
+        return TaskResult(
+            operation,
+            "COMPLETED" if result.status == "APPROVED" else "BLOCKED",
+            output,
+        )
+    elif operation == "verify_supplier_offer":
+        offer_data = dict(data)
+        for field in ("stock_checked_at", "evidence_checked_at"):
+            offer_data[field] = _datetime_value(offer_data.get(field), field)
+        offer = SupplierOffer(**offer_data)
+        result = verify_supplier_offer(offer)
+        output = asdict(result)
+        return TaskResult(
+            operation,
+            "COMPLETED" if result.status == "VERIFIED" else "BLOCKED",
+            output,
+        )
+    elif operation == "assess_product_candidate":
+        product_data = dict(data["product"])
+        product_data["demand_evidence_urls"] = tuple(product_data["demand_evidence_urls"])
+        product_data["demand_evidence_checked_at"] = _datetime_value(
+            product_data.get("demand_evidence_checked_at"), "demand_evidence_checked_at"
+        )
+        product = ProductCandidate(**product_data)
+        supplier_data = dict(data["supplier"])
+        supplier_data["missing_evidence"] = tuple(supplier_data["missing_evidence"])
+        supplier = SupplierVerification(**supplier_data)
+        profitability_data = dict(data["profitability"])
+        profitability_data["missing_costs"] = tuple(profitability_data["missing_costs"])
+        profitability = ProfitabilityResult(**profitability_data)
+        result = assess_product(product, supplier, profitability)
+        output = asdict(result)
+        return TaskResult(
+            operation,
+            "COMPLETED" if result.status == "READY_FOR_LISTING_REVIEW" else "BLOCKED",
+            output,
+        )
     elif operation == "draft_product_listing":
         product = _required_text(data, "product_name")
         features = _text_list(data, "features")
