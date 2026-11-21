@@ -50,9 +50,9 @@ def _datetime_value(value: Any, field: str) -> datetime | None:
     if isinstance(value, datetime):
         return value
     if not isinstance(value, str):
-        raise ValueError(f"{field} must be an ISO-8601 datetime string")
+        raise TypeError(f"{field} must be an ISO-8601 datetime string")
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return datetime.fromisoformat(value)
     except ValueError as exc:
         raise ValueError(f"{field} must be an ISO-8601 datetime string") from exc
 
