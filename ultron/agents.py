@@ -7,9 +7,7 @@ from typing import Any
 
 from ultron.commerce_research import (
     ProductCandidate,
-    ProfitabilityResult,
     SupplierOffer,
-    SupplierVerification,
     assess_product,
     calculate_profitability,
     verify_supplier_offer,
@@ -57,6 +55,22 @@ def _datetime_value(value: Any, field: str) -> datetime | None:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
         raise ValueError(f"{field} must be an ISO-8601 datetime string") from exc
+
+
+def _supplier_offer(data: dict[str, Any]) -> SupplierOffer:
+    offer_data = dict(data)
+    for field in ("stock_checked_at", "evidence_checked_at"):
+        offer_data[field] = _datetime_value(offer_data.get(field), field)
+    return SupplierOffer(**offer_data)
+
+
+def _product_candidate(data: dict[str, Any]) -> ProductCandidate:
+    product_data = dict(data)
+    product_data["demand_evidence_urls"] = tuple(product_data["demand_evidence_urls"])
+    product_data["demand_evidence_checked_at"] = _datetime_value(
+        product_data.get("demand_evidence_checked_at"), "demand_evidence_checked_at"
+    )
+    return ProductCandidate(**product_data)
 
 
 def execute_task(agent: str, operation: str, data: dict[str, Any]) -> TaskResult:
@@ -135,11 +149,7 @@ def execute_task(agent: str, operation: str, data: dict[str, Any]) -> TaskResult
             output,
         )
     elif operation == "verify_supplier_offer":
-        offer_data = dict(data)
-        for field in ("stock_checked_at", "evidence_checked_at"):
-            offer_data[field] = _datetime_value(offer_data.get(field), field)
-        offer = SupplierOffer(**offer_data)
-        result = verify_supplier_offer(offer)
+        result = verify_supplier_offer(_supplier_offer(data))
         output = asdict(result)
         return TaskResult(
             operation,
@@ -147,23 +157,17 @@ def execute_task(agent: str, operation: str, data: dict[str, Any]) -> TaskResult
             output,
         )
     elif operation == "assess_product_candidate":
-        product_data = dict(data["product"])
-        product_data["demand_evidence_urls"] = tuple(product_data["demand_evidence_urls"])
-        product_data["demand_evidence_checked_at"] = _datetime_value(
-            product_data.get("demand_evidence_checked_at"), "demand_evidence_checked_at"
-        )
-        product = ProductCandidate(**product_data)
-        supplier_data = dict(data["supplier"])
-        supplier_data["missing_evidence"] = tuple(supplier_data["missing_evidence"])
-        supplier = SupplierVerification(**supplier_data)
-        profitability_data = dict(data["profitability"])
-        profitability_data["missing_costs"] = tuple(profitability_data["missing_costs"])
-        profitability = ProfitabilityResult(**profitability_data)
-        result = assess_product(product, supplier, profitability)
-        output = asdict(result)
+        product = _product_candidate(data["product"])
+        supplier_offer = _supplier_offer(data["supplier_offer"])
+        supplier_result = verify_supplier_offer(supplier_offer)
+        profitability = calculate_profitability(**data["profitability"])
+        assessment = assess_product(product, supplier_result, profitability)
+        output = asdict(assessment)
+        output["supplier_verification"] = asdict(supplier_result)
+        output["profitability"] = asdict(profitability)
         return TaskResult(
             operation,
-            "COMPLETED" if result.status == "READY_FOR_LISTING_REVIEW" else "BLOCKED",
+            "COMPLETED" if assessment.status == "READY_FOR_LISTING_REVIEW" else "BLOCKED",
             output,
         )
     elif operation == "draft_product_listing":
